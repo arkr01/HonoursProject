@@ -1,4 +1,5 @@
 import torch
+import numpy
 import matplotlib.pyplot as plt
 from torch.utils.data import DataLoader
 from torchvision import datasets
@@ -33,6 +34,8 @@ test_data = datasets.FashionMNIST(root="data", train=False, download=True, trans
 train_dataloader = DataLoader(training_data, batch_size=BATCH_SIZE)
 test_dataloader = DataLoader(test_data, batch_size=BATCH_SIZE)
 
+# whatever = torch.zeros(NUM_EPOCHS)
+# whatever_x = [i for i in range(NUM_EPOCHS)]
 
 # Define model(s)
 model = NeuralNetwork()
@@ -55,6 +58,8 @@ def train(dataloader, model, loss_fn, optimizer):
         model.set_batch_idx(batch)
         pred = model(X)
         loss = loss_fn(pred, y)
+        # if batch < NUM_EPOCHS:
+        #     whatever[batch] = loss.item()
 
         # Backpropagation
         optimizer.zero_grad()
@@ -113,6 +118,8 @@ if __name__ == '__main__':
 
     model.eval()
     x, y = test_data[0][0], test_data[0][1]
+    # plt.plot(whatever_x, whatever)
+    # plt.show()
     with torch.no_grad():
         x = x.to(device)
         pred = model(x)
