@@ -7,7 +7,6 @@ from torchvision.transforms import ToTensor
 from modules import *
 
 """ Hyperparameters and other constants """
-BATCH_SIZE = 64
 NUM_EPOCHS = 2
 LEARNING_RATE = 1e-3
 
@@ -30,6 +29,8 @@ print("Using", device)
 training_data = datasets.FashionMNIST(root="data", train=True, download=True, transform=ToTensor())
 test_data = datasets.FashionMNIST(root="data", train=False, download=True, transform=ToTensor())
 
+SGD = True  # Set to true if we want SGD instead of pure GD (i.e. without batching)
+BATCH_SIZE = 64 if SGD else len(training_data)
 train_dataloader = DataLoader(training_data, batch_size=BATCH_SIZE)
 test_dataloader = DataLoader(test_data, batch_size=BATCH_SIZE)
 
