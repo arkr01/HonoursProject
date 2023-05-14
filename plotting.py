@@ -18,7 +18,7 @@ def load_model(filename, model_type='logistic_reg', input_dim=28, num_labels=10,
     :param invex_lambda: lambda parameter for invex regularisation
     :return: loaded model in evaluation mode
     """
-    model = NNClassifier()
+    model = None
     if model_type == 'logistic_reg':
         model = MultinomialLogisticRegression(input_dim=input_dim, num_classes=num_labels)
     model = ModuleWrapper(model, lamda=invex_lambda)
@@ -37,6 +37,8 @@ logistic_model_with_invex_l2 = load_model(filename='./Models/logistic_model_with
                                           invex_lambda=INVEX_LAMBDA)
 
 # Load training/test losses/accuracies
+training_losses_unregularised = torch.load('./Losses_Metrics/Train/logistic_model_unregularised_loss.pth').to('cpu')
+test_losses_unregularised = torch.load('./Losses_Metrics/Test/logistic_model_unregularised_loss.pth').to('cpu')
 training_losses_with_invex = torch.load('./Losses_Metrics/Train/logistic_model_with_invex_loss.pth').to('cpu')
 test_losses_with_invex = torch.load('./Losses_Metrics/Test/logistic_model_with_invex_loss.pth').to('cpu')
 training_losses_with_l2 = torch.load('./Losses_Metrics/Train/logistic_model_with_l2_loss.pth').to('cpu')
@@ -44,8 +46,19 @@ test_losses_with_l2 = torch.load('./Losses_Metrics/Test/logistic_model_with_l2_l
 
 # Generate (and save) plots
 with torch.no_grad():
+    # Plot train/test losses for different models
     plt.figure()
-    plt.plot(epochs_to_plot, training_losses_with_invex, epochs_to_plot, training_losses_with_l2)
+    plt.plot(epochs_to_plot, training_losses_unregularised, epochs_to_plot, training_losses_with_invex,
+             epochs_to_plot, training_losses_with_l2)
+
     plt.figure()
-    plt.plot(epochs_to_plot, test_losses_with_invex, epochs_to_plot, test_losses_with_l2)
+    plt.plot(epochs_to_plot, test_losses_unregularised, epochs_to_plot, test_losses_with_invex,
+             epochs_to_plot, test_losses_with_l2)
+
+    # Compare train/test losses between Invex and L2 regularisation
+    plt.figure()
+    plt.plot(epochs_to_plot, abs(training_losses_with_invex - training_losses_with_l2))
+
+    plt.figure()
+    plt.plot(epochs_to_plot, abs(test_losses_with_invex - test_losses_with_l2))
     plt.show()
