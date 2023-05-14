@@ -1,43 +1,32 @@
-import torch
+"""
+    Main training/testing code
+
+    Author: Adrian Rahul Kamal Rajkamal
+"""
+
 import matplotlib.pyplot as plt
-from torch.utils.data import DataLoader
-from torchvision import datasets
-from torchvision.transforms import ToTensor
 
 from modules import *
+from dataset import *
 
 """ Hyperparameters and other constants """
-NUM_EPOCHS = 2
+NUM_EPOCHS = 1000
 LEARNING_RATE = 1e-3
 
 # Select what to compare here
 COMPARING_INVEX = True  # Set to true when comparing Invex Regularisation effects
-COMPARING_L2_REG = True  # Set to true when comparing L2-Regularisation effects
+COMPARING_L2_REG = False  # Set to true when comparing L2-Regularisation effects
 COMPARING_DROPOUT = False  # Set to true when comparing Dropout effects
 COMPARING_BATCH_NORM = False  # Set to true when comparing Batch Normalisation effects
 COMPARING_DATA_AUGMENTATION = False  # Set to true when comparing Data Augmentation effects
 
 # Regularisation hyperparameter values
 WEIGHT_DECAY = 1e-3 * COMPARING_L2_REG
-INVEX_LAMBDA = 1e-5 * COMPARING_INVEX
+INVEX_LAMBDA = 1e-3 * COMPARING_INVEX
 
 # Set device
 device = "cuda" if torch.cuda.is_available() else "cpu"
 print("Using", device)
-
-# Get datasets and set up data loaders
-training_data = datasets.FashionMNIST(root="data", train=True, download=True, transform=ToTensor())
-test_data = datasets.FashionMNIST(root="data", train=False, download=True, transform=ToTensor())
-
-SGD = True  # Set to true if we want SGD instead of pure GD (i.e. without batching)
-BATCH_SIZE = 64 if SGD else len(training_data)
-train_dataloader = DataLoader(training_data, batch_size=BATCH_SIZE)
-test_dataloader = DataLoader(test_data, batch_size=BATCH_SIZE)
-
-# Get dataset information
-img_length = training_data[0][0].shape[1]
-classes = training_data.classes
-num_classes = len(classes)
 
 # Define model(s)
 model = MultinomialLogisticRegression(input_dim=img_length, num_classes=num_classes)
