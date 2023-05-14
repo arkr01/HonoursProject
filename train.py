@@ -9,7 +9,7 @@ from modules import *
 from dataset import *
 
 """ Hyperparameters and other constants """
-NUM_EPOCHS = 1000
+NUM_EPOCHS = 5000
 LEARNING_RATE = 1e-3
 
 # Select what to compare here
@@ -29,8 +29,10 @@ REGULARISATION_CHOICES = MODEL_INVEX + MODEL_L2_REG + MODEL_DROPOUT + MODEL_BATC
 MODEL_CONFIG = "_with" + REGULARISATION_CHOICES if len(REGULARISATION_CHOICES) else "_unregularised"
 
 # Regularisation hyperparameter values
-L2_PARAM = 1e-3 * COMPARING_L2_REG
-INVEX_LAMBDA = 1e-3 * COMPARING_INVEX
+L2_PARAM = 1e-2 * COMPARING_L2_REG
+INVEX_LAMBDA = 1e-2 * COMPARING_INVEX
+
+""" Train/Test setup (Validation TBD) """
 
 # Dataloaders and batch size
 SGD = False  # Set to true if we want SGD instead of pure GD (GD == SGD without batching)
