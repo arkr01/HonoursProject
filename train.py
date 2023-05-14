@@ -13,7 +13,7 @@ NUM_EPOCHS = 1000
 LEARNING_RATE = 1e-3
 
 # Select what to compare here
-COMPARING_INVEX = False  # Set to true when comparing Invex Regularisation effects
+COMPARING_INVEX = True  # Set to true when comparing Invex Regularisation effects
 COMPARING_L2_REG = False  # Set to true when comparing L2-Regularisation effects
 COMPARING_DROPOUT = False  # Set to true when comparing Dropout effects
 COMPARING_BATCH_NORM = False  # Set to true when comparing Batch Normalisation effects
@@ -32,6 +32,7 @@ MODEL_CONFIG = "_with" + REGULARISATION_CHOICES if len(REGULARISATION_CHOICES) e
 L2_PARAM = 1e-3 * COMPARING_L2_REG
 INVEX_LAMBDA = 1e-3 * COMPARING_INVEX
 
+# Dataloaders and batch size
 SGD = False  # Set to true if we want SGD instead of pure GD (GD == SGD without batching)
 BATCH_SIZE = 64 if SGD else len(training_data_subset)
 train_dataloader = DataLoader(training_data_subset, batch_size=BATCH_SIZE)
@@ -39,7 +40,6 @@ test_dataloader = DataLoader(test_data_subset, batch_size=BATCH_SIZE)
 
 # Set device
 device = "cuda" if torch.cuda.is_available() else "cpu"
-print("Using", device)
 
 
 def train(dataloader, model, loss_fn, optimizer):
@@ -92,26 +92,13 @@ if __name__ == '__main__':
     cross_entropy = nn.CrossEntropyLoss()
     sgd = torch.optim.SGD(logistic_model.parameters(), lr=LEARNING_RATE, weight_decay=L2_PARAM)
 
+    print("\nUsing", device, "\n")
     for epoch in range(NUM_EPOCHS):
         print(f"Epoch {epoch + 1}\n-------------------------------")
         train(train_dataloader, logistic_model, cross_entropy, sgd)
         test(test_dataloader, logistic_model, cross_entropy)
-    # print([param for param in logistic_model.parameters()])
+
+    # Model saving
     saved_filename = f"{logistic_model_name}{MODEL_CONFIG}.pth"
     torch.save(logistic_model.state_dict(), saved_filename)
     print(f"Saved PyTorch Model State to {saved_filename}")
-
-    logistic_model = MultinomialLogisticRegression(input_dim=img_length, num_classes=num_classes)
-    logistic_model = ModuleWrapper(logistic_model, lamda=INVEX_LAMBDA)
-    logistic_model.init_ps(train_dataloader=train_dataloader)
-    logistic_model = logistic_model.to(device)
-    logistic_model.load_state_dict(torch.load(saved_filename))
-
-    logistic_model.eval()
-    x, y = test_data[0][0], test_data[0][1]
-
-    with torch.no_grad():
-        x = x.to(device)
-        pred = logistic_model(x)
-        predicted, actual = classes[pred[0].argmax(0)], classes[y]
-        print(f'Predicted: "{predicted}", Actual: "{actual}"')
