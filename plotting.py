@@ -7,8 +7,10 @@ import matplotlib.pyplot as plt
 from train import *
 
 
-def load_model(filename, model_type='logistic_reg', input_dim=28, num_classes=10, invex_lambda=0.0):
-    model = MultinomialLogisticRegression(input_dim=img_length, num_classes=num_classes)
+def load_model(filename, model_type='logistic_reg', input_dim=28, num_labels=10, invex_lambda=0.0):
+    model = NNClassifier()
+    if model_type == 'logistic_reg':
+        model = MultinomialLogisticRegression(input_dim=input_dim, num_classes=num_labels)
     model = ModuleWrapper(model, lamda=invex_lambda)
     model.init_ps(train_dataloader=train_dataloader)
     model = model.to(device)
