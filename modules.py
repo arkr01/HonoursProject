@@ -13,7 +13,7 @@ class ModuleWrapper(nn.Module):
     https://github.com/RixonC/invexifying-regularization
     It appears in its original form
 
-    This acts as a wrapper for any model to perform invex regularisation (https://arxiv.org/abs/2111.11027v1)
+    This acts as a wrapper for any logistic_model to perform invex regularisation (https://arxiv.org/abs/2111.11027v1)
     """
     def __init__(self, module, lamda=0.0):
         super().__init__()

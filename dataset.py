@@ -4,7 +4,7 @@
     Author: Adrian Rahul Kamal Rajkamal
 """
 import torch
-from torch.utils.data import DataLoader, Subset
+from torch.utils.data import Subset
 from torchvision import datasets
 from torchvision.transforms import ToTensor
 
@@ -35,9 +35,3 @@ for class_num in range(num_classes):
 
 training_data_subset = Subset(training_data, train_subset_idx)
 test_data_subset = Subset(test_data, test_subset_idx)
-
-
-SGD = False  # Set to true if we want SGD instead of pure GD (GD == SGD without batching)
-BATCH_SIZE = 64 if SGD else len(training_data_subset)
-train_dataloader = DataLoader(training_data_subset, batch_size=BATCH_SIZE)
-test_dataloader = DataLoader(test_data_subset, batch_size=BATCH_SIZE)
