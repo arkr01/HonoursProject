@@ -8,6 +8,16 @@ from train import *
 
 
 def load_model(filename, model_type='logistic_reg', input_dim=28, num_labels=10, invex_lambda=0.0):
+    """
+    Create and load a trained model.
+
+    :param filename: name of saved model file
+    :param model_type: type of model to be loaded (i.e. multinomial logistic regression, [add others])
+    :param input_dim: input dimension of data
+    :param num_labels: number of classes/labels (for classification)
+    :param invex_lambda: lambda parameter for invex regularisation
+    :return: loaded model in evaluation mode
+    """
     model = NNClassifier()
     if model_type == 'logistic_reg':
         model = MultinomialLogisticRegression(input_dim=input_dim, num_classes=num_labels)
@@ -19,27 +29,20 @@ def load_model(filename, model_type='logistic_reg', input_dim=28, num_labels=10,
     return model
 
 
+# Load trained models
 logistic_model_unregularised = load_model(filename='logistic_model_unregularised.pth')
 logistic_model_with_invex = load_model(filename='logistic_model_with_invex.pth', invex_lambda=INVEX_LAMBDA)
 logistic_model_with_l2 = load_model(filename='logistic_model_with_l2.pth')
 logistic_model_with_invex_l2 = load_model(filename='logistic_model_with_invex_l2.pth', invex_lambda=INVEX_LAMBDA)
-x, y = test_data[0][0], test_data[0][1]
 
+# Load training/test losses/accuracies
+training_losses_with_invex = torch.load('logistic_model_with_invex_training_loss.pth')
+test_losses_with_invex = torch.load('logistic_model_with_invex_training_loss.pth')
+
+# Generate (and save) plots
 with torch.no_grad():
-    x = x.to(device)
-
-    pred = logistic_model_unregularised(x)
-    predicted, actual = classes[pred[0].argmax(0)], classes[y]
-    print(f'Predicted: "{predicted}", Actual: "{actual}"')
-
-    pred = logistic_model_with_invex(x)
-    predicted, actual = classes[pred[0].argmax(0)], classes[y]
-    print(f'Predicted: "{predicted}", Actual: "{actual}"')
-
-    pred = logistic_model_with_l2(x)
-    predicted, actual = classes[pred[0].argmax(0)], classes[y]
-    print(f'Predicted: "{predicted}", Actual: "{actual}"')
-
-    pred = logistic_model_with_invex_l2(x)
-    predicted, actual = classes[pred[0].argmax(0)], classes[y]
-    print(f'Predicted: "{predicted}", Actual: "{actual}"')
+    plt.figure()
+    plt.loglog(epochs_to_plot, training_losses_with_invex.to('cpu'))
+    plt.figure()
+    plt.loglog(epochs_to_plot, test_losses_with_invex.to('cpu'))
+    plt.show()
