@@ -32,6 +32,8 @@ REGULARISATION_CHOICES = MODEL_INVEX + MODEL_L2_REG + MODEL_DROPOUT + MODEL_BATC
 MODEL_CONFIG = "_with" + REGULARISATION_CHOICES if len(REGULARISATION_CHOICES) else "_unregularised"
 MODELS_FOLDER = './Models/'
 LOSS_METRICS_FOLDER = './Losses_Metrics/'
+TRAIN_FOLDER = LOSS_METRICS_FOLDER + 'Train/'
+TEST_FOLDER = LOSS_METRICS_FOLDER + 'Test/'
 
 # Regularisation hyperparameter values
 L2_PARAM = 1e-2 * COMPARING_L2_REG
@@ -130,9 +132,11 @@ if __name__ == '__main__':
         mkdir(MODELS_FOLDER)
     if not exists(LOSS_METRICS_FOLDER):
         mkdir(LOSS_METRICS_FOLDER)
+        mkdir(TRAIN_FOLDER)
+        mkdir(TEST_FOLDER)
 
     model_type_filename = f"{logistic_model_name}{MODEL_CONFIG}"
     torch.save(logistic_model.state_dict(), f"{MODELS_FOLDER}{model_type_filename}.pth")
-    torch.save(training_loss_to_plot, f"{LOSS_METRICS_FOLDER}{model_type_filename}_training_loss.pth")
-    torch.save(test_loss_to_plot, f"{LOSS_METRICS_FOLDER}{model_type_filename}_test_loss.pth")
+    torch.save(training_loss_to_plot, f"{TRAIN_FOLDER}{model_type_filename}_loss.pth")
+    torch.save(test_loss_to_plot, f"{TEST_FOLDER}{model_type_filename}_loss.pth")
     print(f"Saved PyTorch Model State and training losses for {model_type_filename}")

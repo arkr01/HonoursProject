@@ -37,10 +37,10 @@ logistic_model_with_invex_l2 = load_model(filename='./Models/logistic_model_with
                                           invex_lambda=INVEX_LAMBDA)
 
 # Load training/test losses/accuracies
-training_losses_with_invex = torch.load('./Losses_Metrics/logistic_model_with_invex_training_loss.pth').to('cpu')
-test_losses_with_invex = torch.load('./Losses_Metrics/logistic_model_with_invex_test_loss.pth').to('cpu')
-training_losses_with_l2 = torch.load('./Losses_Metrics/logistic_model_with_l2_training_loss.pth').to('cpu')
-test_losses_with_l2 = torch.load('./Losses_Metrics/logistic_model_with_l2_test_loss.pth').to('cpu')
+training_losses_with_invex = torch.load('./Losses_Metrics/Train/logistic_model_with_invex_loss.pth').to('cpu')
+test_losses_with_invex = torch.load('./Losses_Metrics/Test/logistic_model_with_invex_loss.pth').to('cpu')
+training_losses_with_l2 = torch.load('./Losses_Metrics/Train/logistic_model_with_l2_loss.pth').to('cpu')
+test_losses_with_l2 = torch.load('./Losses_Metrics/Test/logistic_model_with_l2_loss.pth').to('cpu')
 
 # Generate (and save) plots
 with torch.no_grad():
