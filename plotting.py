@@ -30,19 +30,22 @@ def load_model(filename, model_type='logistic_reg', input_dim=28, num_labels=10,
 
 
 # Load trained models
-logistic_model_unregularised = load_model(filename='logistic_model_unregularised.pth')
-logistic_model_with_invex = load_model(filename='logistic_model_with_invex.pth', invex_lambda=INVEX_LAMBDA)
-logistic_model_with_l2 = load_model(filename='logistic_model_with_l2.pth')
-logistic_model_with_invex_l2 = load_model(filename='logistic_model_with_invex_l2.pth', invex_lambda=INVEX_LAMBDA)
+logistic_model_unregularised = load_model(filename='./Models/logistic_model_unregularised.pth')
+logistic_model_with_invex = load_model(filename='./Models/logistic_model_with_invex.pth', invex_lambda=INVEX_LAMBDA)
+logistic_model_with_l2 = load_model(filename='./Models/logistic_model_with_l2.pth')
+logistic_model_with_invex_l2 = load_model(filename='./Models/logistic_model_with_invex_l2.pth',
+                                          invex_lambda=INVEX_LAMBDA)
 
 # Load training/test losses/accuracies
-training_losses_with_invex = torch.load('logistic_model_with_invex_training_loss.pth')
-test_losses_with_invex = torch.load('logistic_model_with_invex_training_loss.pth')
+training_losses_with_invex = torch.load('./Losses_Metrics/logistic_model_with_invex_training_loss.pth').to('cpu')
+test_losses_with_invex = torch.load('./Losses_Metrics/logistic_model_with_invex_test_loss.pth').to('cpu')
+training_losses_with_l2 = torch.load('./Losses_Metrics/logistic_model_with_l2_training_loss.pth').to('cpu')
+test_losses_with_l2 = torch.load('./Losses_Metrics/logistic_model_with_l2_test_loss.pth').to('cpu')
 
 # Generate (and save) plots
 with torch.no_grad():
     plt.figure()
-    plt.loglog(epochs_to_plot, training_losses_with_invex.to('cpu'))
+    plt.plot(epochs_to_plot, training_losses_with_invex, epochs_to_plot, training_losses_with_l2)
     plt.figure()
-    plt.loglog(epochs_to_plot, test_losses_with_invex.to('cpu'))
+    plt.plot(epochs_to_plot, test_losses_with_invex, epochs_to_plot, test_losses_with_l2)
     plt.show()

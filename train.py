@@ -12,12 +12,12 @@ from modules import *
 from dataset import *
 
 """ Hyperparameters and other constants """
-NUM_EPOCHS = 5000
+NUM_EPOCHS = 1000
 LEARNING_RATE = 1e-3
 
 # Select what to compare here
 COMPARING_INVEX = True  # Set to true when comparing Invex Regularisation effects
-COMPARING_L2_REG = False  # Set to true when comparing L2-Regularisation effects
+COMPARING_L2_REG = True  # Set to true when comparing L2-Regularisation effects
 COMPARING_DROPOUT = False  # Set to true when comparing Dropout effects
 COMPARING_BATCH_NORM = False  # Set to true when comparing Batch Normalisation effects
 COMPARING_DATA_AUGMENTATION = False  # Set to true when comparing Data Augmentation effects
@@ -31,7 +31,7 @@ MODEL_DATA_AUGMENTATION = "_data_aug" if COMPARING_DATA_AUGMENTATION else ""
 REGULARISATION_CHOICES = MODEL_INVEX + MODEL_L2_REG + MODEL_DROPOUT + MODEL_BATCH_NORM + MODEL_DATA_AUGMENTATION
 MODEL_CONFIG = "_with" + REGULARISATION_CHOICES if len(REGULARISATION_CHOICES) else "_unregularised"
 MODELS_FOLDER = './Models/'
-LOSS_METRICS_FOLDER = MODELS_FOLDER + 'Losses_Metrics/'
+LOSS_METRICS_FOLDER = './Losses_Metrics/'
 
 # Regularisation hyperparameter values
 L2_PARAM = 1e-2 * COMPARING_L2_REG
@@ -128,8 +128,8 @@ if __name__ == '__main__':
     # Model and loss/metrics saving
     if not exists(MODELS_FOLDER):
         mkdir(MODELS_FOLDER)
-        if not exists(LOSS_METRICS_FOLDER):
-            mkdir(LOSS_METRICS_FOLDER)
+    if not exists(LOSS_METRICS_FOLDER):
+        mkdir(LOSS_METRICS_FOLDER)
 
     model_type_filename = f"{logistic_model_name}{MODEL_CONFIG}"
     torch.save(logistic_model.state_dict(), f"{MODELS_FOLDER}{model_type_filename}.pth")
