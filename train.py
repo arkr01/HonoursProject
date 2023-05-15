@@ -5,7 +5,6 @@
 """
 from os import mkdir
 from os.path import exists
-import torch
 from torch.utils.data import DataLoader
 
 from modules import *
@@ -17,7 +16,7 @@ LEARNING_RATE = 1e-3
 
 # Select what to compare here
 COMPARING_INVEX = True  # Set to true when comparing Invex Regularisation effects
-COMPARING_L2_REG = True  # Set to true when comparing L2-Regularisation effects
+COMPARING_L2_REG = False  # Set to true when comparing L2-Regularisation effects
 COMPARING_DROPOUT = False  # Set to true when comparing Dropout effects
 COMPARING_BATCH_NORM = False  # Set to true when comparing Batch Normalisation effects
 COMPARING_DATA_AUGMENTATION = False  # Set to true when comparing Data Augmentation effects
@@ -139,4 +138,11 @@ if __name__ == '__main__':
     torch.save(logistic_model.state_dict(), f"{MODELS_FOLDER}{model_type_filename}.pth")
     torch.save(training_loss_to_plot, f"{TRAIN_FOLDER}{model_type_filename}_loss.pth")
     torch.save(test_loss_to_plot, f"{TEST_FOLDER}{model_type_filename}_loss.pth")
+
+    # Get learned parameters (excluding p variables) and convert into single tensor - for comparison
+    parameters = [parameter.data.flatten() for parameter in logistic_model.parameters()]
+    parameters_no_p = parameters[:-1] if COMPARING_INVEX else parameters  # Remove p variables if they exist
+    parameters_no_p_cat = torch.cat(parameters_no_p)  # Convert all parameters into one tensor
+    torch.save(parameters_no_p_cat, f"{LOSS_METRICS_FOLDER}{model_type_filename}_parameters.pth")
+
     print(f"Saved PyTorch Model State and training losses for {model_type_filename}")

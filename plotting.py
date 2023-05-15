@@ -4,6 +4,7 @@
     Author: Adrian Rahul Kamal Rajkamal
 """
 import matplotlib.pyplot as plt
+
 from train import *
 
 
@@ -44,6 +45,10 @@ test_losses_with_invex = torch.load('./Losses_Metrics/Test/logistic_model_with_i
 training_losses_with_l2 = torch.load('./Losses_Metrics/Train/logistic_model_with_l2_loss.pth').to('cpu')
 test_losses_with_l2 = torch.load('./Losses_Metrics/Test/logistic_model_with_l2_loss.pth').to('cpu')
 
+unregularised_params = torch.load('./Losses_Metrics/logistic_model_unregularised_parameters.pth')
+invex_params = torch.load('./Losses_Metrics/logistic_model_with_invex_parameters.pth')
+l2_params = torch.load('./Losses_Metrics/logistic_model_with_l2_parameters.pth')
+
 # Generate (and save) plots
 with torch.no_grad():
     # Plot train/test losses for different models
@@ -62,3 +67,8 @@ with torch.no_grad():
     plt.figure()
     plt.plot(epochs_to_plot, abs(test_losses_with_invex - test_losses_with_l2))
     plt.show()
+
+    # Euclidean norm between invex and L2-regularised solution - measure of similarity
+    print("||invex - L2|| =", torch.linalg.vector_norm((invex_params - l2_params)).item())
+    print("||invex - unregularised|| =", torch.linalg.vector_norm((invex_params - unregularised_params)).item())
+    print("||L2 - unregularised|| =", torch.linalg.vector_norm((l2_params - unregularised_params)).item())
