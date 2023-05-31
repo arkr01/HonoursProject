@@ -75,6 +75,6 @@ with torch.no_grad():
         f.write("||invex - L2||_inf = " + str(torch.linalg.vector_norm((invex_params - l2_params), ord=math.inf).item())
                 + "\n")
         f.write("||invex - unregularised||_inf = " + str(torch.linalg.vector_norm((invex_params - unregularised_params),
-                                                                             ord=math.inf).item()) + "\n")
+                                                                                  ord=math.inf).item()) + "\n")
         f.write("||L2 - unregularised||_inf = " + str(torch.linalg.vector_norm((l2_params - unregularised_params),
-                                                                          ord=math.inf).item()) + "\n")
+                                                                               ord=math.inf).item()) + "\n")
