@@ -19,8 +19,8 @@ classes = training_data.classes
 num_classes = len(classes)
 
 # Create subsets of train/test datasets
-NUM_PER_CLASS_TRAIN = 10  # Specify how many training examples per class to include in subset
-NUM_PER_CLASS_TEST = 2  # Specify how many test examples per class to include in subset
+NUM_PER_CLASS_TRAIN = 100  # Specify how many training examples per class to include in subset
+NUM_PER_CLASS_TEST = 20  # Specify how many test examples per class to include in subset
 train_subset_idx = torch.zeros(0, dtype=torch.long)
 test_subset_idx = torch.zeros_like(train_subset_idx)
 

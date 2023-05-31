@@ -42,6 +42,13 @@ class ModuleWrapper(nn.Module):
         return x
 
 
+# Used for zero-initialisation
+def _init_weights_zero(module):
+    if isinstance(module, nn.Linear):
+        module.weight.data.zero_()
+        module.bias.data.zero_()
+
+
 class MultinomialLogisticRegression(nn.Module):
     """
     Implements multinomial logistic regression
@@ -53,6 +60,7 @@ class MultinomialLogisticRegression(nn.Module):
         super().__init__()
         self.flatten = nn.Flatten()
         self.hidden = nn.Linear(input_dim * input_dim, num_classes)
+        self.apply(_init_weights_zero)
 
     def forward(self, x):
         x = self.flatten(x)

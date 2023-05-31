@@ -5,18 +5,20 @@
 """
 from os import mkdir
 from os.path import exists
+
+import torch
 from torch.utils.data import DataLoader
 
 from modules import *
 from dataset import *
 
 """ Hyperparameters and other constants """
-NUM_EPOCHS = 1000
+NUM_EPOCHS = 1000#int(1e7)  # Large due to training until convergence of gradient norm
 LEARNING_RATE = 1e-3
 
 # Select what to compare here
-COMPARING_INVEX = True  # Set to true when comparing Invex Regularisation effects
-COMPARING_L2_REG = False  # Set to true when comparing L2-Regularisation effects
+COMPARING_INVEX = False  # Set to true when comparing Invex Regularisation effects
+COMPARING_L2_REG = True  # Set to true when comparing L2-Regularisation effects
 COMPARING_DROPOUT = False  # Set to true when comparing Dropout effects
 COMPARING_BATCH_NORM = False  # Set to true when comparing Batch Normalisation effects
 COMPARING_DATA_AUGMENTATION = False  # Set to true when comparing Data Augmentation effects
@@ -35,8 +37,10 @@ TRAIN_FOLDER = LOSS_METRICS_FOLDER + 'Train/'
 TEST_FOLDER = LOSS_METRICS_FOLDER + 'Test/'
 
 # Regularisation hyperparameter values
-L2_PARAM = 1e-2 * COMPARING_L2_REG
-INVEX_LAMBDA = 1e-2 * COMPARING_INVEX
+INVEX_VAL = 1e-2
+L2_VAL = 1e-2
+L2_PARAM = L2_VAL * COMPARING_L2_REG
+INVEX_LAMBDA = INVEX_VAL * COMPARING_INVEX
 
 """ Train/Test setup (Validation TBD) """
 
@@ -69,8 +73,8 @@ def train(dataloader, model, loss_fn, optimizer, epoch_to_plot):
         prediction = model(examples)
         loss = loss_fn(prediction, targets)
 
-        # Save training loss
-        if epoch_to_plot in epochs_to_plot:
+        # Save training loss for each epoch (only the first batch)
+        if epoch_to_plot in epochs_to_plot and not batch:
             training_loss_to_plot[loss_plot_idx] += loss
             loss_plot_idx += 1
 
@@ -125,6 +129,18 @@ if __name__ == '__main__':
         print(f"Epoch {epoch + 1}\n-------------------------------")
         train(train_dataloader, logistic_model, cross_entropy, sgd, epoch)
         test(test_dataloader, logistic_model, cross_entropy, epoch)
+
+        # Check convergence
+        grad_norm = 0
+        for p in logistic_model.parameters():
+            param_norm = p.grad.detach().data.norm(2)
+            grad_norm += param_norm.item() ** 2
+        grad_norm = grad_norm ** 0.5
+        print("Current grad norm:", grad_norm)
+
+        if grad_norm < 1e-8:
+            print("Training converged.")
+            break
 
     # Model and loss/metrics saving
     if not exists(MODELS_FOLDER):

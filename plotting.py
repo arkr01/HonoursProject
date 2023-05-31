@@ -3,6 +3,8 @@
 
     Author: Adrian Rahul Kamal Rajkamal
 """
+import math
+
 import matplotlib.pyplot as plt
 
 from train import *
@@ -32,10 +34,10 @@ def load_model(filename, model_type='logistic_reg', input_dim=28, num_labels=10,
 
 # Load trained models
 logistic_model_unregularised = load_model(filename='./Models/logistic_model_unregularised.pth')
-logistic_model_with_invex = load_model(filename='./Models/logistic_model_with_invex.pth', invex_lambda=INVEX_LAMBDA)
+logistic_model_with_invex = load_model(filename='./Models/logistic_model_with_invex.pth', invex_lambda=INVEX_VAL)
 logistic_model_with_l2 = load_model(filename='./Models/logistic_model_with_l2.pth')
 logistic_model_with_invex_l2 = load_model(filename='./Models/logistic_model_with_invex_l2.pth',
-                                          invex_lambda=INVEX_LAMBDA)
+                                          invex_lambda=INVEX_VAL)
 
 # Load training/test losses/accuracies
 training_losses_unregularised = torch.load('./Losses_Metrics/Train/logistic_model_unregularised_loss.pth').to('cpu')
@@ -68,7 +70,11 @@ with torch.no_grad():
     plt.plot(epochs_to_plot, abs(test_losses_with_invex - test_losses_with_l2))
     plt.show()
 
-    # Euclidean norm between invex and L2-regularised solution - measure of similarity
-    print("||invex - L2|| =", torch.linalg.vector_norm((invex_params - l2_params)).item())
-    print("||invex - unregularised|| =", torch.linalg.vector_norm((invex_params - unregularised_params)).item())
-    print("||L2 - unregularised|| =", torch.linalg.vector_norm((l2_params - unregularised_params)).item())
+    # Infinity norm between invex and L2-regularised solution - measure of similarity
+    with open(f'{LOSS_METRICS_FOLDER}inf_norm_diffs.txt', 'w') as f:
+        f.write("||invex - L2||_inf = " + str(torch.linalg.vector_norm((invex_params - l2_params), ord=math.inf).item())
+                + "\n")
+        f.write("||invex - unregularised||_inf = " + str(torch.linalg.vector_norm((invex_params - unregularised_params),
+                                                                             ord=math.inf).item()) + "\n")
+        f.write("||L2 - unregularised||_inf = " + str(torch.linalg.vector_norm((l2_params - unregularised_params),
+                                                                          ord=math.inf).item()) + "\n")
