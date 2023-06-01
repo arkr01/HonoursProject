@@ -13,7 +13,7 @@ class ModuleWrapper(nn.Module):
     https://github.com/RixonC/invexifying-regularization
     It appears in its original form
 
-    This acts as a wrapper for any logistic_model to perform invex regularisation (https://arxiv.org/abs/2111.11027v1)
+    This acts as a wrapper for any model to perform invex regularisation (https://arxiv.org/abs/2111.11027v1)
     """
     def __init__(self, module, lamda=0.0):
         super().__init__()
@@ -66,3 +66,68 @@ class MultinomialLogisticRegression(nn.Module):
         x = self.flatten(x)
         logits = self.hidden(x)
         return logits  # no need for softmax - performed by cross-entropy loss
+
+
+class VAE(nn.Module):
+
+    def __init__(self, latent_dim, ):
+        super().__init__()
+        self.latent_dim = latent_dim
+
+        self.encoder = nn.Sequential(
+            nn.Conv2d(1, 32, 3, 2, 1),
+            nn.LeakyReLU(),
+            nn.Conv2d(32, 64, 3, 2, 1),
+            nn.LeakyReLU(),
+            nn.Conv2d(64, 128, 3, 2, 1),
+            nn.LeakyReLU(),
+            nn.Conv2d(128, 256, 3, 2, 1),
+            nn.LeakyReLU()
+        )
+
+        self.mu = nn.Linear(256, 1)
+        self.logvar = nn.Linear(256, 1)
+        self.final = nn.Linear(1, 256)
+
+        self.decoder = nn.Sequential(
+            nn.ConvTranspose2d(265, 128, 3, 2, 1, 1),
+            nn.LeakyReLU(),
+            nn.ConvTranspose2d(128, 64, 3, 2, 1, 1),
+            nn.LeakyReLU(),
+            nn.ConvTranspose2d(64, 32, 3, 2, 1, 1),
+            nn.LeakyReLU(),
+            nn.ConvTranspose2d(32, 16, 3, 2, 1, 1),
+            nn.LeakyReLU(),
+            nn.ConvTranspose2d(16, 8, 3, 2, 1),
+            nn.LeakyReLU(),
+            nn.Conv2d(8, 1, 3, 2, 1),
+            nn.Sigmoid()  # Only to scale results to [0, 1]
+        )
+
+    def encode(self, x):
+        # encode
+        x = self.encoder(x)
+        return torch.flatten(x, start_dim=1)
+
+    def reparameterize(self, x):
+        mu, logvar = self.mu(x), self.logvar(x)
+        std_dev = torch.exp(0.5 * logvar)
+        epsilon = torch.randn_like(std_dev)
+        return mu + epsilon * std_dev
+
+    def decode(self, z):
+        z = nn.Unflatten(1, (256, 1, 1))
+        return self.decoder(z)
+
+    def forward(self, x):
+        x = self.encode(x)
+        z = self.reparameterize(x)
+        z = self.final(z)
+        return self.decode(z)
+
+    def sample(self, num_samples, device='cuda'):
+        z = torch.randn(num_samples, self.latent_dim).to(device)
+        return self.decode(z)
+
+    def reconstruct(self, x):
+        return self.decode(x)[0]

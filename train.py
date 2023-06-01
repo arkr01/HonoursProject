@@ -13,12 +13,12 @@ from modules import *
 from dataset import *
 
 """ Hyperparameters and other constants """
-NUM_EPOCHS = 1000#int(1e7)  # Large due to training until convergence of gradient norm
-LEARNING_RATE = 1e-3
+NUM_EPOCHS = 5000#int(1e7)  # Large due to training until convergence of gradient norm
+LEARNING_RATE = 1e-1
 
 # Select what to compare here
-COMPARING_INVEX = False  # Set to true when comparing Invex Regularisation effects
-COMPARING_L2_REG = True  # Set to true when comparing L2-Regularisation effects
+COMPARING_INVEX = True  # Set to true when comparing Invex Regularisation effects
+COMPARING_L2_REG = False  # Set to true when comparing L2-Regularisation effects
 COMPARING_DROPOUT = False  # Set to true when comparing Dropout effects
 COMPARING_BATCH_NORM = False  # Set to true when comparing Batch Normalisation effects
 COMPARING_DATA_AUGMENTATION = False  # Set to true when comparing Data Augmentation effects
@@ -46,9 +46,9 @@ INVEX_LAMBDA = INVEX_VAL * COMPARING_INVEX
 
 # Dataloaders and batch size
 SGD = False  # Set to true if we want SGD instead of pure GD (GD == SGD without batching)
-BATCH_SIZE = 64 if SGD else len(training_data_subset)
-train_dataloader = DataLoader(training_data_subset, batch_size=BATCH_SIZE)
-test_dataloader = DataLoader(test_data_subset, batch_size=BATCH_SIZE)
+BATCH_SIZE = 64 if SGD else len(fashion_training_data_subset)
+fashion_train_dataloader = DataLoader(fashion_training_data_subset, batch_size=BATCH_SIZE)
+fashion_test_dataloader = DataLoader(fashion_test_data_subset, batch_size=BATCH_SIZE)
 
 
 # Set device
@@ -113,12 +113,12 @@ def test(dataloader, model, loss_fn, epoch_to_plot):
 
 if __name__ == '__main__':
     # Define model(s)
-    logistic_model = MultinomialLogisticRegression(input_dim=img_length, num_classes=num_classes)
+    logistic_model = MultinomialLogisticRegression(input_dim=fashion_img_length, num_classes=num_fashion_classes)
     logistic_model_name = f"{logistic_model=}".split('=')[0]  # Gives name of model variable!
     print(logistic_model)
 
     logistic_model = ModuleWrapper(logistic_model, lamda=INVEX_LAMBDA)
-    logistic_model.init_ps(train_dataloader=train_dataloader)
+    logistic_model.init_ps(train_dataloader=fashion_train_dataloader)
     logistic_model = logistic_model.to(device)
 
     cross_entropy = nn.CrossEntropyLoss()
@@ -127,8 +127,8 @@ if __name__ == '__main__':
     print("\nUsing", device, "\n")
     for epoch in range(NUM_EPOCHS):
         print(f"Epoch {epoch + 1}\n-------------------------------")
-        train(train_dataloader, logistic_model, cross_entropy, sgd, epoch)
-        test(test_dataloader, logistic_model, cross_entropy, epoch)
+        train(fashion_train_dataloader, logistic_model, cross_entropy, sgd, epoch)
+        test(fashion_test_dataloader, logistic_model, cross_entropy, epoch)
 
         # Check convergence
         grad_norm = 0

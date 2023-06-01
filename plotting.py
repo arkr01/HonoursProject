@@ -25,7 +25,7 @@ def load_model(filename, model_type='logistic_reg', input_dim=28, num_labels=10,
     if model_type == 'logistic_reg':
         model = MultinomialLogisticRegression(input_dim=input_dim, num_classes=num_labels)
     model = ModuleWrapper(model, lamda=invex_lambda)
-    model.init_ps(train_dataloader=train_dataloader)
+    model.init_ps(train_dataloader=fashion_train_dataloader)
     model = model.to(device)
     model.load_state_dict(torch.load(filename))
     model.eval()
