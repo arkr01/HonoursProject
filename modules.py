@@ -11,7 +11,7 @@ class ModuleWrapper(nn.Module):
     """
     This class has been sourced from
     https://github.com/RixonC/invexifying-regularization
-    It appears in its original form
+    It appears in its original form, barring a small modification in the constructor to initialise self.ps to None.
 
     This acts as a wrapper for any model to perform invex regularisation (https://arxiv.org/abs/2111.11027v1)
     """
@@ -20,6 +20,7 @@ class ModuleWrapper(nn.Module):
         self.module = module
         self.lamda = lamda
         self.batch_idx = 0
+        self.ps = None
 
     def init_ps(self, train_dataloader):
         if self.lamda != 0.0:
