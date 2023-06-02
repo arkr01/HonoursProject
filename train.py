@@ -13,7 +13,7 @@ from datasets import *
 
 """ Hyperparameters and other constants """
 NUM_EPOCHS = 5000  # int(1e7)  # Large due to training until convergence of gradient norm
-LEARNING_RATE = 1e-1
+LEARNING_RATE = 3e-4
 
 # Select what to compare here
 COMPARING_INVEX = True  # Set to true when comparing Invex Regularisation effects
@@ -44,7 +44,7 @@ INVEX_LAMBDA = INVEX_VAL * COMPARING_INVEX
 """ Train/Test setup (Validation TBD) """
 
 # Dataloaders and batch size
-SGD = False  # Set to true if we want SGD instead of pure GD (GD == SGD without batching)
+SGD = True  # Set to true if we want SGD instead of pure GD (GD == SGD without batching)
 BATCH_SIZE = 64 if SGD else len(fashion_training_data_subset)
 
 fashion_train_dataloader = DataLoader(fashion_training_data_subset, batch_size=BATCH_SIZE)
