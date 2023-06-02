@@ -11,16 +11,18 @@ class ModuleWrapper(nn.Module):
     """
     This class has been sourced from
     https://github.com/RixonC/invexifying-regularization
-    It appears in its original form, barring a small modification in the constructor to initialise self.ps to None.
+    It appears primarily in its original form, barring a small modification in the constructor to initialise self.ps to
+    None, as well as generalisations to handle NN architectures with multiple outputs.
 
     This acts as a wrapper for any model to perform invex regularisation (https://arxiv.org/abs/2111.11027v1)
     """
-    def __init__(self, module, lamda=0.0):
+    def __init__(self, module, lamda=0.0, reconstruction=False):
         super().__init__()
         self.module = module
         self.lamda = lamda
         self.batch_idx = 0
         self.ps = None
+        self.reconstruction = reconstruction
 
     def init_ps(self, train_dataloader):
         if self.lamda != 0.0:
@@ -28,7 +30,7 @@ class ModuleWrapper(nn.Module):
             ps = []
             for inputs, targets in iter(train_dataloader):
                 outputs = self.module(inputs)
-                p = torch.zeros_like(outputs)
+                p = torch.zeros_like(outputs[0] if self.reconstruction else outputs)
                 ps.append(torch.nn.Parameter(p, requires_grad=True))
             self.ps = torch.nn.ParameterList(ps)
             self.module.train()
@@ -39,7 +41,12 @@ class ModuleWrapper(nn.Module):
     def forward(self, x):
         x = self.module(x)
         if self.lamda != 0.0 and self.training:
-            x = x + self.lamda * self.ps[self.batch_idx]
+            if self.reconstruction:
+                updated_x = list(x)
+                updated_x[0] = updated_x[0] + self.lamda * self.ps[self.batch_idx]
+                x = tuple(updated_x)
+            else:
+                x = x + self.lamda * self.ps[self.batch_idx]
         return x
 
 

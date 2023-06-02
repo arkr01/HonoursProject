@@ -135,7 +135,7 @@ if __name__ == '__main__':
     # logistic_model.init_ps(train_dataloader=fashion_train_dataloader)
     # logistic_model = logistic_model.to(device)
 
-    vae_model = ModuleWrapper(vae_model, lamda=INVEX_LAMBDA)
+    vae_model = ModuleWrapper(vae_model, lamda=INVEX_LAMBDA, reconstruction=True)
     vae_model.init_ps(train_dataloader=cifar10_train_dataloader)
     vae_model = vae_model.to(device)
 
@@ -152,16 +152,16 @@ if __name__ == '__main__':
         # test(fashion_test_dataloader, logistic_model, cross_entropy, epoch)
 
         # Check convergence
-        grad_norm = 0
-        for p in vae_model.parameters():
-            param_norm = p.grad.detach().data.norm(2)
-            grad_norm += param_norm.item() ** 2
-        grad_norm = grad_norm ** 0.5
-        print("Current grad norm:", grad_norm)
-
-        if grad_norm < 1e-8:
-            print("Training converged.")
-            break
+        # grad_norm = 0
+        # for p in vae_model.parameters():
+        #     param_norm = p.grad.detach().data.norm(2)
+        #     grad_norm += param_norm.item() ** 2
+        # grad_norm = grad_norm ** 0.5
+        # print("Current grad norm:", grad_norm)
+        #
+        # if grad_norm < 1e-8:
+        #     print("Training converged.")
+        #     break
 
     # Model and loss/metrics saving
     if not exists(MODELS_FOLDER):
