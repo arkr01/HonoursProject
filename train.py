@@ -6,14 +6,13 @@
 from os import mkdir
 from os.path import exists
 
-import torch
 from torch.utils.data import DataLoader
 
 from modules import *
 from datasets import *
 
 """ Hyperparameters and other constants """
-NUM_EPOCHS = 5000#int(1e7)  # Large due to training until convergence of gradient norm
+NUM_EPOCHS = 5000  # int(1e7)  # Large due to training until convergence of gradient norm
 LEARNING_RATE = 1e-1
 
 # Select what to compare here
@@ -76,8 +75,13 @@ def train(dataloader, model, loss_fn, optimizer, epoch_to_plot, reconstruction=F
 
         # Compute prediction error
         model.set_batch_idx(batch)
-        prediction = model(examples)
-        loss = loss_fn(prediction, examples if reconstruction else targets)
+        kl_divergence = 0
+        if reconstruction:
+            prediction, mu, logvar = model(examples)
+            kl_divergence = torch.mean((mu ** 2 + torch.exp(logvar) - 1 - logvar) / 2)
+        else:
+            prediction = model(examples)
+        loss = loss_fn(prediction, examples if reconstruction else targets) - kl_divergence
 
         # Save training loss for each epoch (only the first batch)
         if epoch_to_plot in epochs_to_plot and not batch:

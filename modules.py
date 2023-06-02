@@ -110,7 +110,7 @@ class VAE(nn.Module):
         mu, logvar = self.mu(x), self.logvar(x)
         std_dev = torch.exp(0.5 * logvar)
         epsilon = torch.randn_like(std_dev)
-        return mu + epsilon * std_dev
+        return mu + epsilon * std_dev, mu, logvar
 
     def decode(self, z):
         # Unflatten input
@@ -120,9 +120,9 @@ class VAE(nn.Module):
 
     def forward(self, x):
         x = self.encode(x)
-        z = self.reparameterize(x)
+        z, mu, logvar = self.reparameterize(x)
         z = self.projection(z)
-        return self.decode(z)
+        return self.decode(z), mu, logvar
 
     def sample(self, num_samples, device='cuda'):
         z = torch.randn(num_samples, self.latent_dim).to(device)
