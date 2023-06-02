@@ -85,8 +85,8 @@ class VAE(nn.Module):
         self.encoder = nn.Sequential(*[layer for pair in encoder_layer_pairs for layer in pair])
 
         # After last layer, as each layer halves the image dimensions, the total number of neurons in the last layer is
-        # the number of convolutional filters in the last layer, multiplied by the dimensions of the image of the output
-        # layer (think 'volume of prism')
+        # the number of convolutional filters in the last layer, multiplied by the dimensions of the image of the
+        # output layer (think 'volume of prism')
         encoder_output_shape = (self.conv_channel_nums[-1]) * ((self.input_dim // (2 ** self.num_conv)) ** 2)
 
         self.mu = nn.Linear(encoder_output_shape, self.latent_dim)
