@@ -70,39 +70,36 @@ class MultinomialLogisticRegression(nn.Module):
 
 class VAE(nn.Module):
 
-    def __init__(self, latent_dim, ):
+    def __init__(self, input_dim, num_input_channels, latent_dim=200, num_conv=4):
         super().__init__()
+        self.input_dim = input_dim
+        self.num_input_channels = num_input_channels
         self.latent_dim = latent_dim
+        self.num_conv = num_conv
 
-        self.encoder = nn.Sequential(
-            nn.Conv2d(1, 32, 3, 2, 1),
-            nn.LeakyReLU(),
-            nn.Conv2d(32, 64, 3, 2, 1),
-            nn.LeakyReLU(),
-            nn.Conv2d(64, 128, 3, 2, 1),
-            nn.LeakyReLU(),
-            nn.Conv2d(128, 256, 3, 2, 1),
-            nn.LeakyReLU()
-        )
+        # Encoder doubles the number of convolutional filters each time, whilst also halving the image dimensions.
+        # Starts (arbitrarily) with the initial number of output filters equal to the input dimension
+        self.conv_channel_nums = [self.num_input_channels] + [self.input_dim * 2 ** i for i in range(self.num_conv)]
+        encoder_layer_pairs = [(nn.Conv2d(self.conv_channel_nums[i], self.conv_channel_nums[i + 1], 3, 2, 1),
+                                nn.LeakyReLU()) for i in range(self.num_conv)]
+        self.encoder = nn.Sequential(*[layer for pair in encoder_layer_pairs for layer in pair])
 
-        self.mu = nn.Linear(256, 1)
-        self.logvar = nn.Linear(256, 1)
-        self.final = nn.Linear(1, 256)
+        # After last layer, as each layer halves the image dimensions, the total number of neurons in the last layer is
+        # the number of convolutional filters in the last layer, multiplied by the dimensions of the image of the output
+        # layer (think 'volume of prism')
+        encoder_output_shape = (self.conv_channel_nums[-1]) * ((self.input_dim // (2 ** self.num_conv)) ** 2)
 
-        self.decoder = nn.Sequential(
-            nn.ConvTranspose2d(265, 128, 3, 2, 1, 1),
-            nn.LeakyReLU(),
-            nn.ConvTranspose2d(128, 64, 3, 2, 1, 1),
-            nn.LeakyReLU(),
-            nn.ConvTranspose2d(64, 32, 3, 2, 1, 1),
-            nn.LeakyReLU(),
-            nn.ConvTranspose2d(32, 16, 3, 2, 1, 1),
-            nn.LeakyReLU(),
-            nn.ConvTranspose2d(16, 8, 3, 2, 1),
-            nn.LeakyReLU(),
-            nn.Conv2d(8, 1, 3, 2, 1),
-            nn.Sigmoid()  # Only to scale results to [0, 1]
-        )
+        self.mu = nn.Linear(encoder_output_shape, self.latent_dim)
+        self.logvar = nn.Linear(encoder_output_shape, self.latent_dim)
+
+        # Project back from latent space to (flattened) encoder output space
+        self.projection = nn.Linear(self.latent_dim, encoder_output_shape)
+
+        decoder_layer_pairs = [(
+            nn.ConvTranspose2d(self.conv_channel_nums[i], self.conv_channel_nums[i - 1], 3, 2, 1, 1), nn.LeakyReLU())
+            for i in range(self.num_conv, 0, -1)]
+        self.decoder = nn.Sequential(*[layer for pair in decoder_layer_pairs for layer in pair])
+        self.decoder.append(nn.Sigmoid())  # To scale decoded pixels to [0, 1]
 
     def encode(self, x):
         # encode
@@ -116,18 +113,17 @@ class VAE(nn.Module):
         return mu + epsilon * std_dev
 
     def decode(self, z):
-        z = nn.Unflatten(1, (256, 1, 1))
-        return self.decoder(z)
+        # Unflatten input
+        z_unflattened = z.view(-1, self.conv_channel_nums[-1], (self.input_dim // (2 ** self.num_conv)),
+                               (self.input_dim // (2 ** self.num_conv)))
+        return self.decoder(z_unflattened)
 
     def forward(self, x):
         x = self.encode(x)
         z = self.reparameterize(x)
-        z = self.final(z)
+        z = self.projection(z)
         return self.decode(z)
 
     def sample(self, num_samples, device='cuda'):
         z = torch.randn(num_samples, self.latent_dim).to(device)
-        return self.decode(z)
-
-    def reconstruct(self, x):
-        return self.decode(x)[0]
+        return self.decode(self.projection(z))
