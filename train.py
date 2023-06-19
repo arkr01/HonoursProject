@@ -78,10 +78,10 @@ def train(dataloader, model, loss_fn, optimizer, epoch_to_plot, reconstruction=F
         kl_divergence = 0
         if reconstruction:
             prediction, mu, logvar = model(examples)
-            kl_divergence = torch.mean((mu ** 2 + torch.exp(logvar) - 1 - logvar) / 2)
+            kl_divergence = torch.mean(-0.5 * torch.sum(1 + logvar - mu ** 2 - torch.exp(logvar), dim=1), dim=0)
         else:
             prediction = model(examples)
-        loss = loss_fn(prediction, examples if reconstruction else targets) - kl_divergence
+        loss = loss_fn(prediction, examples if reconstruction else targets) + kl_divergence
 
         # Save training loss for each epoch (only the first batch)
         if epoch_to_plot in epochs_to_plot and not batch:
@@ -140,7 +140,7 @@ if __name__ == '__main__':
     vae_model = vae_model.to(device)
 
     cross_entropy = nn.CrossEntropyLoss()
-    mse = nn.MSELoss(reduction='sum')
+    mse = nn.MSELoss()
     sgd = torch.optim.SGD(vae_model.parameters(), lr=LEARNING_RATE, weight_decay=L2_PARAM)
 
     print("\nUsing", device, "\n")
@@ -152,16 +152,17 @@ if __name__ == '__main__':
         # test(fashion_test_dataloader, logistic_model, cross_entropy, epoch)
 
         # Check convergence
-        # grad_norm = 0
-        # for p in vae_model.parameters():
-        #     param_norm = p.grad.detach().data.norm(2)
-        #     grad_norm += param_norm.item() ** 2
-        # grad_norm = grad_norm ** 0.5
-        # print("Current grad norm:", grad_norm)
-        #
-        # if grad_norm < 1e-8:
-        #     print("Training converged.")
-        #     break
+        grad_norm = 0
+        for p in vae_model.parameters():
+            if p.grad is not None and p.requires_grad:
+                param_norm = p.grad.detach().data.norm(2)
+                grad_norm += param_norm.item() ** 2
+        grad_norm = grad_norm ** 0.5
+        print("Current grad norm:", grad_norm)
+
+        if grad_norm < 1e-8:
+            print("Training converged.")
+            break
 
     # Model and loss/metrics saving
     if not exists(MODELS_FOLDER):
