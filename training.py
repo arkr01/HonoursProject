@@ -33,12 +33,10 @@ MODEL_DROPOUT = ""
 MODEL_BATCH_NORM = ""
 MODEL_DATA_AUGMENTATION = ""
 REGULARISATION_CHOICES = MODEL_INVEX + MODEL_L2_REG + MODEL_DROPOUT + MODEL_BATCH_NORM + MODEL_DATA_AUGMENTATION
-MODEL_CONFIG = "_with" + REGULARISATION_CHOICES
+MODEL_CONFIG = "with" + REGULARISATION_CHOICES
 
-MODELS_FOLDER = './Models/'
-LOSS_METRICS_FOLDER = './Losses_Metrics/'
-TRAIN_FOLDER = LOSS_METRICS_FOLDER + 'Train/'
-TEST_FOLDER = LOSS_METRICS_FOLDER + 'Test/'
+MODELS_FOLDER = '../Models/'
+LOSS_METRICS_FOLDER = '../Losses_Metrics/'
 
 # Dataloaders and batch size
 SGD = True  # Set to true if we want SGD instead of pure GD (GD == SGD without batching)
@@ -54,23 +52,33 @@ training_loss_to_plot = torch.zeros_like(torch.FloatTensor(epochs_to_plot)).to(d
 test_loss_to_plot = torch.zeros_like(torch.FloatTensor(epochs_to_plot)).to(device)
 
 
-def experiment_setup(training_set, test_set, invex=True, l2=False, dropout=False, batch_norm=False, data_aug=False,
-                     sgd=True, batch_size=64):
+def experiment_setup(training_set, test_set, num_epochs=NUM_EPOCHS, grad_norm_tol=GRAD_NORM_TOL,
+                     lr=LEARNING_RATE, invex=COMPARING_INVEX, l2=COMPARING_L2_REG, dropout=COMPARING_DROPOUT,
+                     batch_norm=COMPARING_BATCH_NORM, data_aug=COMPARING_DATA_AUGMENTATION, sgd=SGD,
+                     batch_size=BATCH_SIZE):
     """
     Set up hyperparameters and other constants for current experiment and return a DataLoader for
     said experiment.
 
     :param training_set: training dataset
     :param test_set: test dataset
-    :param invex: True if applying invex method, False otherwise.
-    :param l2: True if applying L2 regularisation, False otherwise.
-    :param dropout: True if applying dropout, False otherwise.
-    :param batch_norm: True if applying batch normalisation, False otherwise.
-    :param data_aug: True if applying data augmentation, False otherwise.
-    :param sgd: True if training via SGD, False for pure GD.
+    :param num_epochs: Number of epochs to train
+    :param lr: Learning rate for training
+    :param grad_norm_tol: Gradient norm tolerance value to track convergence
+    :param invex: True if applying invex method, False otherwise
+    :param l2: True if applying L2 regularisation, False otherwise
+    :param dropout: True if applying dropout, False otherwise
+    :param batch_norm: True if applying batch normalisation, False otherwise
+    :param data_aug: True if applying data augmentation, False otherwise
+    :param sgd: True if training via SGD, False for pure GD
     :param batch_size: dataloader batch size
     :return: train and test dataloaders for experiment
     """
+    global NUM_EPOCHS, GRAD_NORM_TOL, LEARNING_RATE
+    NUM_EPOCHS = num_epochs
+    GRAD_NORM_TOL = grad_norm_tol
+    LEARNING_RATE = lr
+
     global COMPARING_INVEX, COMPARING_L2_REG, COMPARING_DROPOUT, COMPARING_BATCH_NORM, COMPARING_DATA_AUGMENTATION, \
         L2_PARAM, INVEX_PARAM
     COMPARING_INVEX = invex
@@ -88,7 +96,7 @@ def experiment_setup(training_set, test_set, invex=True, l2=False, dropout=False
     MODEL_BATCH_NORM = "_batch_norm" if COMPARING_BATCH_NORM else ""
     MODEL_DATA_AUGMENTATION = "_data_aug" if COMPARING_DATA_AUGMENTATION else ""
     REGULARISATION_CHOICES = MODEL_INVEX + MODEL_L2_REG + MODEL_DROPOUT + MODEL_BATCH_NORM + MODEL_DATA_AUGMENTATION
-    MODEL_CONFIG = "_with" + REGULARISATION_CHOICES if len(REGULARISATION_CHOICES) else "_unregularised"
+    MODEL_CONFIG = "with" + REGULARISATION_CHOICES if len(REGULARISATION_CHOICES) else "unregularised"
 
     L2_PARAM = L2_VAL * COMPARING_L2_REG
     INVEX_PARAM = INVEX_VAL * COMPARING_INVEX
@@ -172,23 +180,33 @@ def test(dataloader, model, loss_fn, epoch_to_plot, reconstruction=False):
     print(f"Test Error: \n Accuracy: {(100 * correct):>0.1f}%, Avg loss: {test_loss:>8f} \n")
 
 
-def save(model):
+def save(model, model_name):
+    """
+    Creates necessary directories and saves all models/losses/metrics for plotting and analysis.
+
+    :param model: Trained model to save
+    :param model_name: Name of trained model
+    :return: None
+    """
     if not exists(MODELS_FOLDER):
         mkdir(MODELS_FOLDER)
+    if not exists(MODELS_FOLDER + model_name):
+        mkdir(MODELS_FOLDER + model_name)
     if not exists(LOSS_METRICS_FOLDER):
         mkdir(LOSS_METRICS_FOLDER)
-        mkdir(TRAIN_FOLDER)
-        mkdir(TEST_FOLDER)
+    if not exists(LOSS_METRICS_FOLDER + model_name):
+        mkdir(LOSS_METRICS_FOLDER + model_name)
+        mkdir(LOSS_METRICS_FOLDER + model_name + '/Train/')
+        mkdir(LOSS_METRICS_FOLDER + model_name + '/Test/')
 
-    model_name = f"{model=}".split('=')[0]  # Gives name of model variable!
-    model_type_filename = f"{model_name}{MODEL_CONFIG}"
-    torch.save(model.state_dict(), f"{MODELS_FOLDER}{model_type_filename}.pth")
-    torch.save(training_loss_to_plot, f"{TRAIN_FOLDER}{model_type_filename}_loss.pth")
-    torch.save(test_loss_to_plot, f"{TEST_FOLDER}{model_type_filename}_loss.pth")
+        model_type_filename = f"{model_name}/{MODEL_CONFIG}"
+        torch.save(model.state_dict(), f"{MODELS_FOLDER}{model_type_filename}.pth")
+        torch.save(training_loss_to_plot, f"{LOSS_METRICS_FOLDER}{model_name}/Train/{MODEL_CONFIG}_loss.pth")
+        torch.save(test_loss_to_plot, f"{LOSS_METRICS_FOLDER}{model_name}/Test/{MODEL_CONFIG}_loss.pth")
 
-    # Get learned parameters (excluding p variables) and convert into single tensor - for comparison
-    parameters = [parameter.data.flatten() for parameter in model.parameters()]
-    parameters_no_p = parameters[:-1] if COMPARING_INVEX else parameters  # Remove p variables if they exist
-    torch.save(torch.cat(parameters_no_p), f"{LOSS_METRICS_FOLDER}{model_type_filename}_parameters.pth")
+        # Get learned parameters (excluding p variables) and convert into single tensor - for comparison
+        parameters = [parameter.data.flatten() for parameter in model.parameters()]
+        parameters_no_p = parameters[:-1] if COMPARING_INVEX else parameters  # Remove p variables if they exist
+        torch.save(torch.cat(parameters_no_p), f"{LOSS_METRICS_FOLDER}{model_type_filename}_parameters.pth")
 
-    print(f"Saved PyTorch Model State and training losses for {model_type_filename}")
+        print(f"Saved PyTorch Model State and training losses for {model_type_filename}")

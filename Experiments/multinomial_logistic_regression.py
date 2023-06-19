@@ -2,8 +2,10 @@ from training import *
 from modules import *
 
 if __name__ == '__main__':
-    fashion_train_dataloader, fashion_test_dataloader = experiment_setup(fashion_training_data, fashion_test_data)
+    fashion_train_dataloader, fashion_test_dataloader = experiment_setup(fashion_training_data, fashion_test_data,
+                                                                         num_epochs=30)
     logistic_model = MultinomialLogisticRegression(input_dim=fashion_img_length, num_classes=num_fashion_classes)
+    logistic_model_name = f"{logistic_model=}".split('=')[0]  # Gives name of model variable!
     print(logistic_model)
 
     logistic_model = ModuleWrapper(logistic_model, lamda=INVEX_PARAM)
@@ -19,4 +21,4 @@ if __name__ == '__main__':
     # test(fashion_test_dataloader, logistic_model, cross_entropy, epoch)
 
     # Model and loss/metrics saving
-    save(logistic_model)
+    save(logistic_model, logistic_model_name)
