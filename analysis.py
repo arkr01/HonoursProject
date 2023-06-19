@@ -4,10 +4,9 @@
     Author: Adrian Rahul Kamal Rajkamal
 """
 import math
-
 import matplotlib.pyplot as plt
 
-from training import *
+from Experiments.multinomial_logistic_regression import *
 
 
 def load_model(filename, model_type='logistic_reg', input_dim=28, num_labels=10, invex_lambda=0.0):
