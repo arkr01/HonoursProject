@@ -1,5 +1,5 @@
-from training import *
-from modules import *
+from workflow import *
+from networks import *
 
 if __name__ == '__main__':
     fashion_train_dataloader, fashion_test_dataloader = experiment_setup(fashion_training_data, fashion_test_data,
@@ -17,8 +17,9 @@ if __name__ == '__main__':
 
     print("\nUsing", device, "\n")
 
-    train(fashion_train_dataloader, logistic_model, cross_entropy, sgd)
-    # test(fashion_test_dataloader, logistic_model, cross_entropy, epoch)
-
-    # Model and loss/metrics saving
+    for epoch in range(NUM_EPOCHS):
+        converged = train(fashion_train_dataloader, logistic_model, cross_entropy, sgd, epoch)
+        test(fashion_test_dataloader, logistic_model, cross_entropy, epoch)
+        if converged:
+            break
     save(logistic_model, logistic_model_name)

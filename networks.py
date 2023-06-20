@@ -16,13 +16,13 @@ class ModuleWrapper(nn.Module):
 
     This acts as a wrapper for any model to perform invex regularisation (https://arxiv.org/abs/2111.11027v1)
     """
-    def __init__(self, module, lamda=0.0, reconstruction=False):
+    def __init__(self, module, lamda=0.0, multi_output=False):
         super().__init__()
         self.module = module
         self.lamda = lamda
         self.batch_idx = 0
         self.ps = None
-        self.reconstruction = reconstruction
+        self.multi_output = multi_output
 
     def init_ps(self, train_dataloader):
         if self.lamda != 0.0:
@@ -30,7 +30,7 @@ class ModuleWrapper(nn.Module):
             ps = []
             for inputs, targets in iter(train_dataloader):
                 outputs = self.module(inputs)
-                p = torch.zeros_like(outputs[0] if self.reconstruction else outputs)
+                p = torch.zeros_like(outputs[0] if self.multi_output else outputs)
                 ps.append(torch.nn.Parameter(p, requires_grad=True))
             self.ps = torch.nn.ParameterList(ps)
             self.module.train()
@@ -41,7 +41,7 @@ class ModuleWrapper(nn.Module):
     def forward(self, x):
         x = self.module(x)
         if self.lamda != 0.0 and self.training:
-            if self.reconstruction:
+            if self.multi_output:
                 updated_x = list(x)
                 updated_x[0] = updated_x[0] + self.lamda * self.ps[self.batch_idx]
                 x = tuple(updated_x)

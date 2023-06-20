@@ -108,56 +108,67 @@ def experiment_setup(training_set, test_set, num_epochs=NUM_EPOCHS, grad_norm_to
     return DataLoader(training_set, batch_size=BATCH_SIZE), DataLoader(test_set, batch_size=BATCH_SIZE)
 
 
-def train(dataloader, model, loss_fn, optimizer, reconstruction=False):
+def train(dataloader, model, loss_fn, optimizer, epoch, reconstruction=False):
     size = len(dataloader.dataset)
     loss_plot_idx = 0
     model.train()
 
-    for epoch in range(NUM_EPOCHS):
-        print(f"Epoch {epoch + 1}\n-------------------------------")
-        for batch, (examples, targets) in enumerate(dataloader):
-            examples, targets = examples.to(device), targets.to(device)
+    print(f"Epoch {epoch + 1}\n-------------------------------")
+    for batch, (examples, targets) in enumerate(dataloader):
+        examples, targets = examples.to(device), targets.to(device)
 
-            # Compute prediction error
-            model.set_batch_idx(batch)
+        # Compute prediction error
+        model.set_batch_idx(batch)
+        loss = calculate_loss(model(examples), examples, targets, loss_fn, reconstruction)
 
-            kl_divergence = 0
-            if reconstruction:
-                prediction, mu, logvar = model(examples)
-                kl_divergence = torch.mean(-0.5 * torch.sum(1 + logvar - mu ** 2 - torch.exp(logvar), dim=1), dim=0)
-            else:
-                prediction = model(examples)
-            loss = loss_fn(prediction, examples if reconstruction else targets) + kl_divergence
+        # Save training loss for each epoch (only the first batch)
+        if epoch in epochs_to_plot and not batch:
+            training_loss_to_plot[loss_plot_idx] += loss
+            loss_plot_idx += 1
 
-            # Save training loss for each epoch (only the first batch)
-            if epoch in epochs_to_plot and not batch:
-                training_loss_to_plot[loss_plot_idx] += loss
-                loss_plot_idx += 1
+        # Backpropagation
+        optimizer.zero_grad()
+        loss.backward()
+        optimizer.step()
 
-            # Backpropagation
-            optimizer.zero_grad()
-            loss.backward()
-            optimizer.step()
+        if batch % 100 == 0:
+            loss, current = loss.item(), (batch + 1) * len(examples)
+            print(f"loss: {loss:>7f}  [{current:>5d}/{size:>5d}]")
 
-            if batch % 100 == 0:
-                loss, current = loss.item(), (batch + 1) * len(examples)
-                print(f"loss: {loss:>7f}  [{current:>5d}/{size:>5d}]")
-
-        # Check convergence (via L2 gradient norm)
-        grad_norm = 0
-        for p in model.parameters():
-            if p.grad is not None and p.requires_grad:
-                param_norm = p.grad.detach().data.norm(2)
-                grad_norm += param_norm.item() ** 2
-        grad_norm **= 0.5
-        print("Current grad norm:", grad_norm)
-
-        if grad_norm <= GRAD_NORM_TOL:
-            print(f"Training converged after {epoch} epochs.")
-            break
+    if check_grad_convergence(model):
+        print(f"Training converged after {epoch} epochs.")
+        return True
+    return False
 
 
-def test(dataloader, model, loss_fn, epoch_to_plot, reconstruction=False):
+def calculate_loss(model_output, examples, targets, loss_fn, reconstruction):
+    kl_divergence = 0
+    if reconstruction:
+        prediction, mu, logvar = model_output
+        kl_divergence = torch.mean(-0.5 * torch.sum(1 + logvar - mu ** 2 - torch.exp(logvar), dim=1), dim=0)
+    else:
+        prediction = model_output
+    return loss_fn(prediction, examples if reconstruction else targets) + kl_divergence
+
+
+def check_grad_convergence(model):
+    """
+    Check training convergence via L2 gradient norm.
+
+    :param model: model being trained
+    :return: True if converged, False otherwise.
+    """
+    grad_norm = 0
+    for p in model.parameters():
+        if p.grad is not None and p.requires_grad:
+            param_norm = p.grad.detach().data.norm(2)
+            grad_norm += param_norm.item() ** 2
+    grad_norm **= 0.5
+    print("Current grad norm:", grad_norm)
+    return grad_norm <= GRAD_NORM_TOL
+
+
+def test(dataloader, model, loss_fn, epoch, reconstruction=False):
     num_examples = len(dataloader.dataset)
     num_batches = len(dataloader)
     loss_plot_idx = 0
@@ -167,17 +178,20 @@ def test(dataloader, model, loss_fn, epoch_to_plot, reconstruction=False):
         for examples, targets in dataloader:
             examples, targets = examples.to(device), targets.to(device)
             prediction = model(examples)
-            test_loss += loss_fn(prediction, examples if reconstruction else targets).item()
-            correct += (prediction.argmax(1) == targets).type(torch.float).sum().item()
+            test_loss += calculate_loss(prediction, examples, targets, loss_fn, reconstruction).item()
+            if not reconstruction:
+                correct += (prediction.argmax(1) == targets).type(torch.float).sum().item()
     test_loss /= num_batches
 
     # Save test loss
-    if epoch_to_plot in epochs_to_plot:
+    if epoch in epochs_to_plot:
         test_loss_to_plot[loss_plot_idx] += test_loss
         loss_plot_idx += 1
 
     correct /= num_examples
-    print(f"Test Error: \n Accuracy: {(100 * correct):>0.1f}%, Avg loss: {test_loss:>8f} \n")
+    if not reconstruction:
+        print(f"Test Accuracy: {(100 * correct):>0.1f}%")
+    print(f"Test loss (avg): {test_loss:>8f}\n")
 
 
 def save(model, model_name):
