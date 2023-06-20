@@ -60,11 +60,14 @@ def _init_weights_zero(module):
 class MultinomialLogisticRegression(nn.Module):
     """
     Implements multinomial logistic regression
-
-    :param input_dim - input dimension of data (e.g. 28 x 28 image has input_dim = 28)
-    :param num_classes - number of classes to consider
     """
     def __init__(self, input_dim, num_classes):
+        """
+        Constructor
+
+        :param input_dim: input dimension of data (e.g. 28 x 28 image has input_dim = 28)
+        :param num_classes: number of classes to consider
+        """
         super().__init__()
         self.flatten = nn.Flatten()
         self.hidden = nn.Linear(input_dim * input_dim, num_classes)
@@ -77,6 +80,9 @@ class MultinomialLogisticRegression(nn.Module):
 
 
 class VAE(nn.Module):
+    """
+    Implements a Variational Autoencoder
+    """
 
     def __init__(self, input_dim, num_input_channels, latent_dim=200, num_conv=4):
         super().__init__()

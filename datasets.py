@@ -3,20 +3,24 @@
 
     Author: Adrian Rahul Kamal Rajkamal
 """
+from os.path import abspath, dirname
+
 import torch
 from torch.utils.data import Subset
 from torchvision import datasets
 from torchvision.transforms import ToTensor
 
 # Get datasets - train/test split
-fashion_training_data = datasets.FashionMNIST(root="../data", train=True, download=True, transform=ToTensor())
-fashion_test_data = datasets.FashionMNIST(root="../data", train=False, download=True, transform=ToTensor())
+root_dir = dirname(abspath(__file__))
+data_dir = root_dir + '/data'
+fashion_training_data = datasets.FashionMNIST(root=data_dir, train=True, download=True, transform=ToTensor())
+fashion_test_data = datasets.FashionMNIST(root=data_dir, train=False, download=True, transform=ToTensor())
 
-cifar10_training_data = datasets.CIFAR10(root="../data", train=True, download=True, transform=ToTensor())
-cifar10_test_data = datasets.CIFAR10(root="../data", train=False, download=True, transform=ToTensor())
+cifar10_training_data = datasets.CIFAR10(root=data_dir, train=True, download=True, transform=ToTensor())
+cifar10_test_data = datasets.CIFAR10(root=data_dir, train=False, download=True, transform=ToTensor())
 
-cifar100_training_data = datasets.CIFAR100(root="../data", train=True, download=True, transform=ToTensor())
-cifar100_test_data = datasets.CIFAR100(root="../data", train=False, download=True, transform=ToTensor())
+cifar100_training_data = datasets.CIFAR100(root=data_dir, train=True, download=True, transform=ToTensor())
+cifar100_test_data = datasets.CIFAR100(root=data_dir, train=False, download=True, transform=ToTensor())
 
 # Get dataset information
 fashion_img_length = fashion_training_data[0][0].shape[1]
