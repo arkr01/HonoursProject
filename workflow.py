@@ -3,7 +3,7 @@
 
     Author: Adrian Rahul Kamal Rajkamal
 """
-from os import mkdir
+from os import mkdir, environ
 from os.path import exists
 
 from torch.utils.data import DataLoader
@@ -42,8 +42,11 @@ LOSS_METRICS_FOLDER = '../Losses_Metrics/'
 SGD = True  # Set to true if we want SGD instead of pure GD (GD == SGD without batching)
 BATCH_SIZE = 64
 
-# Set device
+# Set device and reproducibility configurations
 device = "cuda" if torch.cuda.is_available() else "cpu"
+torch.use_deterministic_algorithms(True)
+torch.manual_seed(0)
+environ["CUBLAS_WORKSPACE_CONFIG"] = ":16:8"
 
 # Plotting setup
 NUM_EPOCHS_TO_SKIP = 10
