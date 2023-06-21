@@ -78,8 +78,8 @@ class Workflow:
         self.model_config = "with" + choices if len(choices) else "unregularised"
 
         self.epochs_to_plot = torch.logspace(0, log10(self.num_epochs), 100).long().unique() - 1
-        self.avg_training_losses_to_plot = torch.zeros_like(self.epochs_to_plot).to(device)
-        self.avg_test_losses_to_plot = torch.zeros_like(self.epochs_to_plot).to(device)
+        self.avg_training_losses_to_plot = torch.zeros_like(self.epochs_to_plot, dtype=torch.float).to(device)
+        self.avg_test_losses_to_plot = torch.zeros_like(self.epochs_to_plot, dtype=torch.float).to(device)
         self.plot_idx = 0
 
         self.training_loader = DataLoader(training_set, batch_size=self.batch_size)
