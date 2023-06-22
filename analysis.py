@@ -30,32 +30,32 @@ with torch.no_grad():
     plt.figure()
     plt.plot(epochs_to_plot, logistic_unreg_train, 'k')
     plt.plot(epochs_to_plot, logistic_invex_train, 'r')
-    # plt.plot(epochs_to_plot, logistic_l2_train, 'b')
+    plt.plot(epochs_to_plot, logistic_l2_train, 'b')
     plt.legend(['Unregularised', 'Invex', 'L2'])
     plt.xlabel('Epochs')
     plt.ylabel('Avg Train Loss')
     plt.title('Multinomial Logistic Regression')
-    plt.savefig(PLOTS_FOLDER + 'logistic_model/train_unreg_invex_lambda100.jpg')
-    # plt.savefig(PLOTS_FOLDER + 'logistic_model/train_unreg_invex.eps')
+    plt.savefig(PLOTS_FOLDER + 'logistic_model/train_unreg_invex_l2.jpg')
+    # plt.savefig(PLOTS_FOLDER + 'logistic_model/train_unreg_invex_l2.eps')
 
     plt.figure()
     plt.plot(epochs_to_plot, logistic_unreg_test, 'k')
     plt.plot(epochs_to_plot, logistic_invex_test, 'r')
-    # plt.plot(epochs_to_plot, logistic_l2_test, 'b')
+    plt.plot(epochs_to_plot, logistic_l2_test, 'b')
     plt.legend(['Unregularised', 'Invex', 'L2'])
     plt.xlabel('Epochs')
     plt.ylabel('Avg Test Loss')
     plt.title('Multinomial Logistic Regression')
-    plt.savefig(PLOTS_FOLDER + 'logistic_model/test_unreg_invex_lambda100.jpg')
-    # plt.savefig(PLOTS_FOLDER + 'logistic_model/test_unreg_invex.eps')
+    plt.savefig(PLOTS_FOLDER + 'logistic_model/test_unreg_invex_l2.jpg')
+    # plt.savefig(PLOTS_FOLDER + 'logistic_model/test_unreg_invex_l2.eps')
 
     plt.show()
 
-    # Infinity norm between invex and L2-regularised solution - measure of similarity
+    # Infinity norm between invex and L2-regularised solutions - measure of similarity
     with open(f'{LOSS_METRICS_FOLDER}/logistic_model/inf_norm_diffs.txt', 'w') as f:
-        f.write("||invex - L2||_inf = " + str(torch.linalg.vector_norm((invex_params - l2_params), ord=math.inf).item())
-                + "\n")
         f.write("||invex - unregularised||_inf = " + str(torch.linalg.vector_norm((invex_params - unregularised_params),
                                                                                   ord=math.inf).item()) + "\n")
         f.write("||L2 - unregularised||_inf = " + str(torch.linalg.vector_norm((l2_params - unregularised_params),
                                                                                ord=math.inf).item()) + "\n")
+        f.write("||invex - L2||_inf = " + str(torch.linalg.vector_norm((invex_params - l2_params), ord=math.inf).item())
+                + "\n")
