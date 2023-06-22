@@ -6,69 +6,56 @@
 import math
 import matplotlib.pyplot as plt
 
-from Experiments.multinomial_logistic_regression import *
+import torch
 
+from workflow import LOSS_METRICS_FOLDER, PLOTS_FOLDER
 
-def load_model(filename, model_type='logistic_reg', input_dim=28, num_labels=10, invex_lambda=0.0):
-    """
-    Create and load a trained model.
+epochs_to_plot = torch.load(LOSS_METRICS_FOLDER + 'logistic_model/epochs_to_plot.pth').to('cpu')
 
-    :param filename: name of saved model file
-    :param model_type: type of model to be loaded (i.e. multinomial logistic regression, [add others])
-    :param input_dim: input dimension of data
-    :param num_labels: number of classes/labels (for classification)
-    :param invex_lambda: lambda parameter for invex regularisation
-    :return: loaded model in evaluation mode
-    """
-    experiment = Workflow()
-    model = None
-    if model_type == 'logistic_reg':
-        model = MultinomialLogisticRegression(input_dim=input_dim, num_classes=num_labels)
-    model = ModuleWrapper(model, lamda=invex_lambda)
-    model.init_ps(train_dataloader=fashion_train_dataloader)
-    model = model.to(device)
-    model.load_state_dict(torch.load(filename))
-    model.eval()
-    return model
+logistic_unreg_train = torch.load(LOSS_METRICS_FOLDER + 'logistic_model/Train/unregularised_loss.pth').to('cpu')
+logistic_unreg_test = torch.load(LOSS_METRICS_FOLDER + 'logistic_model/Test/unregularised_loss.pth').to('cpu')
 
+logistic_invex_train = torch.load(LOSS_METRICS_FOLDER + 'logistic_model/Train/with_invex_loss.pth').to('cpu')
+logistic_invex_test = torch.load(LOSS_METRICS_FOLDER + 'logistic_model/Test/with_invex_loss.pth').to('cpu')
 
-# Load trained models
-logistic_model_with_invex = load_model(filename='./Models/logistic_model/with_invex.pth', invex_lambda=INVEX_VAL)
+logistic_l2_train = torch.load(LOSS_METRICS_FOLDER + 'logistic_model/Train/with_l2_loss.pth').to('cpu')
+logistic_l2_test = torch.load(LOSS_METRICS_FOLDER + 'logistic_model/Test/with_l2_loss.pth').to('cpu')
 
-# Load training/test losses/accuracies
-training_losses_with_invex = torch.load('./Losses_Metrics/logistic_model/Train/with_invex_loss.pth.pth').to('cpu')
-test_losses_with_invex = torch.load('./Losses_Metrics/logistic_model/Test/with_invex_loss.pth').to('cpu')
+unregularised_params = torch.load(LOSS_METRICS_FOLDER + 'logistic_model/unregularised_parameters.pth')
+invex_params = torch.load(LOSS_METRICS_FOLDER + 'logistic_model/with_invex_parameters.pth')
+l2_params = torch.load(LOSS_METRICS_FOLDER + 'logistic_model/with_l2_parameters.pth')
 
-# unregularised_params = torch.load('./Losses_Metrics/logistic_model_unregularised_parameters.pth')
-# invex_params = torch.load('./Losses_Metrics/logistic_model_with_invex_parameters.pth')
-# l2_params = torch.load('./Losses_Metrics/logistic_model_with_l2_parameters.pth')
-
-# Generate (and save) plots
 with torch.no_grad():
     # Plot train/test losses for different models
     plt.figure()
-    plt.plot(epochs_to_plot, training_losses_with_invex)
+    plt.plot(epochs_to_plot, logistic_unreg_train, 'k')
+    plt.plot(epochs_to_plot, logistic_invex_train, 'r')
+    # plt.plot(epochs_to_plot, logistic_l2_train, 'b')
+    plt.legend(['Unregularised', 'Invex', 'L2'])
     plt.xlabel('Epochs')
     plt.ylabel('Avg Train Loss')
-    plt.title('Multinomial Logistic Regression (with Invex)')
-    plt.savefig('logistic_model_with_invex_train.jpg')
-    plt.savefig('logistic_model_with_invex_train.eps')
+    plt.title('Multinomial Logistic Regression')
+    plt.savefig(PLOTS_FOLDER + 'logistic_model/train_unreg_invex_lambda100.jpg')
+    # plt.savefig(PLOTS_FOLDER + 'logistic_model/train_unreg_invex.eps')
 
     plt.figure()
-    plt.plot(epochs_to_plot, test_losses_with_invex)
+    plt.plot(epochs_to_plot, logistic_unreg_test, 'k')
+    plt.plot(epochs_to_plot, logistic_invex_test, 'r')
+    # plt.plot(epochs_to_plot, logistic_l2_test, 'b')
+    plt.legend(['Unregularised', 'Invex', 'L2'])
     plt.xlabel('Epochs')
     plt.ylabel('Avg Test Loss')
-    plt.title('Multinomial Logistic Regression (with Invex)')
-    plt.savefig('logistic_model_with_invex_test.jpg')
-    plt.savefig('logistic_model_with_invex_test.eps')
+    plt.title('Multinomial Logistic Regression')
+    plt.savefig(PLOTS_FOLDER + 'logistic_model/test_unreg_invex_lambda100.jpg')
+    # plt.savefig(PLOTS_FOLDER + 'logistic_model/test_unreg_invex.eps')
 
     plt.show()
 
     # Infinity norm between invex and L2-regularised solution - measure of similarity
-    # with open(f'{LOSS_METRICS_FOLDER}inf_norm_diffs.txt', 'w') as f:
-    #     f.write("||invex - L2||_inf = " + str(torch.linalg.vector_norm((invex_params - l2_params), ord=math.inf).item())
-    #             + "\n")
-    #     f.write("||invex - unregularised||_inf = " + str(torch.linalg.vector_norm((invex_params - unregularised_params),
-    #                                                                               ord=math.inf).item()) + "\n")
-    #     f.write("||L2 - unregularised||_inf = " + str(torch.linalg.vector_norm((l2_params - unregularised_params),
-    #                                                                            ord=math.inf).item()) + "\n")
+    with open(f'{LOSS_METRICS_FOLDER}/logistic_model/inf_norm_diffs.txt', 'w') as f:
+        f.write("||invex - L2||_inf = " + str(torch.linalg.vector_norm((invex_params - l2_params), ord=math.inf).item())
+                + "\n")
+        f.write("||invex - unregularised||_inf = " + str(torch.linalg.vector_norm((invex_params - unregularised_params),
+                                                                                  ord=math.inf).item()) + "\n")
+        f.write("||L2 - unregularised||_inf = " + str(torch.linalg.vector_norm((l2_params - unregularised_params),
+                                                                               ord=math.inf).item()) + "\n")

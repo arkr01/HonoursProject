@@ -196,13 +196,17 @@ class Workflow:
         # Save model state dict, avg train/test losses (to plot), and parameters
         model_type_filename = f"{model_name}/{self.model_config}"
         torch.save(model.state_dict(), f"{MODELS_FOLDER}{model_type_filename}.pth")
+        torch.save(self.epochs_to_plot, f"{LOSS_METRICS_FOLDER}{model_name}/epochs_to_plot.pth")
         torch.save(self.avg_training_losses_to_plot,
                    f"{LOSS_METRICS_FOLDER}{model_name}/Train/{self.model_config}_loss.pth")
         torch.save(self.avg_test_losses_to_plot, f"{LOSS_METRICS_FOLDER}{model_name}/Test/{self.model_config}_loss.pth")
 
         # Get learned parameters (excluding p variables) and convert into single tensor - for comparison
         parameters = [parameter.data.flatten() for parameter in model.parameters()]
-        parameters_no_p = parameters[:-1] if self.compare_invex else parameters  # Remove p variables if they exist
+
+        # Remove p variables if they exist
+        num_batches = len(self.training_loader)
+        parameters_no_p = parameters[:-num_batches] if self.compare_invex else parameters
         torch.save(torch.cat(parameters_no_p), f"{LOSS_METRICS_FOLDER}{model_type_filename}_parameters.pth")
 
         print(f"Saved PyTorch Model State and training losses for {model_type_filename}")
