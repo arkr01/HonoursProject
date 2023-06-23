@@ -47,8 +47,8 @@ with torch.no_grad():
     plt.xlabel('Epochs')
     plt.ylabel('Avg Train Loss')
     plt.title('Multinomial Logistic Regression')
-    plt.savefig(PLOTS_FOLDER + 'logistic_model/train_unreg_invex_l2_loss.jpg')
-    # plt.savefig(PLOTS_FOLDER + 'logistic_model/train_unreg_invex_l2.eps')
+    plt.savefig(PLOTS_FOLDER + 'logistic_model/Train/unreg_invex_l2_loss.jpg')
+    # plt.savefig(PLOTS_FOLDER + 'logistic_model/Train/unreg_invex_l2_loss.eps')
 
     plt.figure()
     plt.plot(epochs_to_plot, logistic_unreg_test_loss, 'k')
@@ -58,8 +58,8 @@ with torch.no_grad():
     plt.xlabel('Epochs')
     plt.ylabel('Avg Test Loss')
     plt.title('Multinomial Logistic Regression')
-    plt.savefig(PLOTS_FOLDER + 'logistic_model/test_unreg_invex_l2_loss.jpg')
-    # plt.savefig(PLOTS_FOLDER + 'logistic_model/test_unreg_invex_l2.eps')
+    plt.savefig(PLOTS_FOLDER + 'logistic_model/Test/unreg_invex_l2_loss.jpg')
+    # plt.savefig(PLOTS_FOLDER + 'logistic_model/Test/unreg_invex_l2_loss.eps')
 
     # Plot train/test accuracies for different models
     plt.figure()
@@ -70,8 +70,8 @@ with torch.no_grad():
     plt.xlabel('Epochs')
     plt.ylabel('Train Accuracy')
     plt.title('Multinomial Logistic Regression')
-    plt.savefig(PLOTS_FOLDER + 'logistic_model/train_unreg_invex_l2_acc.jpg')
-    # plt.savefig(PLOTS_FOLDER + 'logistic_model/train_unreg_invex_l2.eps')
+    plt.savefig(PLOTS_FOLDER + 'logistic_model/Train/unreg_invex_l2_acc.jpg')
+    # plt.savefig(PLOTS_FOLDER + 'logistic_model/Train/unreg_invex_l2_acc.eps')
 
     plt.figure()
     plt.plot(epochs_to_plot, logistic_unreg_test_acc, 'k')
@@ -81,8 +81,8 @@ with torch.no_grad():
     plt.xlabel('Epochs')
     plt.ylabel('Test Accuracy')
     plt.title('Multinomial Logistic Regression')
-    plt.savefig(PLOTS_FOLDER + 'logistic_model/test_unreg_invex_l2_acc.jpg')
-    # plt.savefig(PLOTS_FOLDER + 'logistic_model/test_unreg_invex_l2.eps')
+    plt.savefig(PLOTS_FOLDER + 'logistic_model/Test/unreg_invex_l2_acc.jpg')
+    # plt.savefig(PLOTS_FOLDER + 'logistic_model/Test/unreg_invex_l2_acc.eps')
 
     # Plot L2 gradient norm convergence for different models
     plt.figure()
@@ -93,8 +93,8 @@ with torch.no_grad():
     plt.xlabel('Epochs')
     plt.ylabel('L2 Gradient Norm')
     plt.title('Multinomial Logistic Regression')
-    plt.savefig(PLOTS_FOLDER + 'logistic_model/train_unreg_invex_l2_grad.jpg')
-    # plt.savefig(PLOTS_FOLDER + 'logistic_model/train_unreg_invex_l2.eps')
+    plt.savefig(PLOTS_FOLDER + 'logistic_model/unreg_invex_l2_grad.jpg')
+    # plt.savefig(PLOTS_FOLDER + 'logistic_model/unreg_invex_l2_grad.eps')
 
     plt.show()
 

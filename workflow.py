@@ -68,13 +68,14 @@ class Workflow:
         self.sgd = sgd
         self.batch_size = batch_size if self.sgd else len(self.training_set)
 
-        self.model_invex = "_invex" if self.compare_invex else ""
-        self.model_l2 = "_l2" if self.compare_l2 else ""
-        self.model_dropout = "_dropout" if self.compare_dropout else ""
-        self.model_batch_norm = "_batch_norm" if self.compare_batch_norm else ""
-        self.model_data_aug = "_data_aug" if self.compare_data_aug else ""
+        model_invex = "_invex" if self.compare_invex else ""
+        model_l2 = "_l2" if self.compare_l2 else ""
+        model_dropout = "_dropout" if self.compare_dropout else ""
+        model_batch_norm = "_batch_norm" if self.compare_batch_norm else ""
+        model_data_aug = "_data_aug" if self.compare_data_aug else ""
+        model_gd = "_gd" if not self.sgd else ""
 
-        choices = self.model_invex + self.model_l2 + self.model_dropout + self.model_batch_norm + self.model_data_aug
+        choices = model_invex + model_l2 + model_dropout + model_batch_norm + model_data_aug + model_gd
         self.model_config = "with" + choices if len(choices) else "unregularised"
 
         self.epochs_to_plot = torch.logspace(0, log10(self.num_epochs), 100).long().unique() - 1
@@ -209,6 +210,8 @@ class Workflow:
             mkdir(PLOTS_FOLDER)
         if not exists(PLOTS_FOLDER + model_name):
             mkdir(PLOTS_FOLDER + model_name)
+            mkdir(PLOTS_FOLDER + model_name + '/Train')
+            mkdir(PLOTS_FOLDER + model_name + '/Test')
 
         # Save model state dict, L2 gradient norm, avg train/test losses and accuracies (to plot), and parameters
         model_type_filename = f"{model_name}/{self.model_config}"
