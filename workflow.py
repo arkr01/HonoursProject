@@ -26,7 +26,7 @@ environ["CUBLAS_WORKSPACE_CONFIG"] = ":16:8"
 class Workflow:
     """ Set up general workflow for hyperparameters, configuration constants, training, testing, and saving. """
 
-    def __init__(self, training_set, test_set, num_epochs=int(1e7), grad_norm_tol=1e-8, lr=3e-4, compare_invex=True,
+    def __init__(self, training_set, test_set, num_epochs=int(1e4), grad_norm_tol=1e-8, lr=3e-4, compare_invex=True,
                  invex_val=1e-2, compare_l2=False, l2_val=1e-2, compare_dropout=False, compare_batch_norm=False,
                  compare_data_aug=False, sgd=True, batch_size=64):
         """
@@ -80,25 +80,31 @@ class Workflow:
         self.epochs_to_plot = torch.logspace(0, log10(self.num_epochs), 100).long().unique() - 1
         self.avg_training_losses_to_plot = torch.zeros_like(self.epochs_to_plot, dtype=torch.float).to(device)
         self.avg_test_losses_to_plot = torch.zeros_like(self.epochs_to_plot, dtype=torch.float).to(device)
+        self.avg_training_accuracies_to_plot = torch.zeros_like(self.epochs_to_plot, dtype=torch.float).to(device)
+        self.avg_test_accuracies_to_plot = torch.zeros_like(self.epochs_to_plot, dtype=torch.float).to(device)
+        self.grad_l2_norm_to_plot = torch.zeros_like(self.epochs_to_plot, dtype=torch.float).to(device)
         self.plot_idx = 0
 
         self.training_loader = DataLoader(training_set, batch_size=self.batch_size)
         self.test_loader = DataLoader(test_set, batch_size=self.batch_size)
 
     def train(self, model, loss_fn, optimizer, epoch, reconstruction=False):
-        size = len(self.training_loader.dataset)
+        num_examples = len(self.training_loader.dataset)
         num_batches = len(self.training_loader)
         model.train()
 
         print(f"Epoch {epoch + 1}\n-------------------------------")
-        total_loss = 0
+        total_loss, correct = 0, 0
         for batch, (examples, targets) in enumerate(self.training_loader):
             examples, targets = examples.to(device), targets.to(device)
 
             # Compute prediction error
             model.set_batch_idx(batch)
-            loss = calculate_loss(model(examples), examples, targets, loss_fn, reconstruction)
+            prediction = model(examples)
+            loss = calculate_loss(prediction, examples, targets, loss_fn, reconstruction)
             total_loss += loss
+            if not reconstruction:
+                correct += (prediction.argmax(1) == targets).type(torch.float).sum().item()
 
             # Backpropagation
             optimizer.zero_grad()
@@ -107,21 +113,28 @@ class Workflow:
 
             if batch % 100 == 0:
                 loss, current = loss.item(), (batch + 1) * len(examples)
-                print(f"loss: {loss:>7f}  [{current:>5d}/{size:>5d}]")
+                print(f"loss: {loss:>7f}  [{current:>5d}/{num_examples:>5d}]")
+        avg_loss = total_loss / num_batches
+        correct /= num_examples
+        print(f"\nTrain loss (avg): {avg_loss:>8f}")
+        if not reconstruction:
+            print(f"Train Accuracy: {(100 * correct):>0.1f}%")
 
         if epoch in self.epochs_to_plot:
-            self.avg_training_losses_to_plot[self.plot_idx] = total_loss / num_batches
+            self.avg_training_losses_to_plot[self.plot_idx] = avg_loss
+            self.avg_training_accuracies_to_plot[self.plot_idx] = correct
 
-        if self.check_grad_convergence(model):
+        if self.check_grad_convergence(model, epoch):
             print(f"Training converged after {epoch} epochs.")
             return True
         return False
 
-    def check_grad_convergence(self, model):
+    def check_grad_convergence(self, model, epoch):
         """
         Check training convergence via L2 gradient norm.
 
         :param model: model being trained
+        :param epoch: current epoch (check if grad norm should be plotted)
         :return: True if converged, False otherwise.
         """
         grad_norm = 0
@@ -130,7 +143,10 @@ class Workflow:
                 param_norm = p.grad.detach().data.norm(2)
                 grad_norm += param_norm.item() ** 2
         grad_norm **= 0.5
-        print("Current grad norm:", grad_norm)
+        print(f"Current grad (L2) norm: {grad_norm:>8f}")
+        if epoch in self.epochs_to_plot:
+            self.grad_l2_norm_to_plot[self.plot_idx] = grad_norm
+
         return grad_norm <= self.grad_norm_tol
 
     def test(self, model, loss_fn, epoch, reconstruction=False):
@@ -146,16 +162,17 @@ class Workflow:
                 if not reconstruction:
                     correct += (prediction.argmax(1) == targets).type(torch.float).sum().item()
         test_loss /= num_batches
+        correct /= num_examples
 
         # Save test loss (only update plot_idx here as test is always called after train)
         if epoch in self.epochs_to_plot:
             self.avg_test_losses_to_plot[self.plot_idx] = test_loss
+            self.avg_test_accuracies_to_plot[self.plot_idx] = correct
             self.plot_idx += 1
 
-        correct /= num_examples
+        print(f"Test loss (avg): {test_loss:>8f}")
         if not reconstruction:
-            print(f"Test Accuracy: {(100 * correct):>0.1f}%")
-        print(f"Test loss (avg): {test_loss:>8f}\n")
+            print(f"Test Accuracy: {(100 * correct):>0.1f}%\n")
 
     def truncate_losses_to_plot(self):
         """
@@ -193,13 +210,22 @@ class Workflow:
         if not exists(PLOTS_FOLDER + model_name):
             mkdir(PLOTS_FOLDER + model_name)
 
-        # Save model state dict, avg train/test losses (to plot), and parameters
+        # Save model state dict, L2 gradient norm, avg train/test losses and accuracies (to plot), and parameters
         model_type_filename = f"{model_name}/{self.model_config}"
         torch.save(model.state_dict(), f"{MODELS_FOLDER}{model_type_filename}.pth")
+
         torch.save(self.epochs_to_plot, f"{LOSS_METRICS_FOLDER}{model_name}/epochs_to_plot.pth")
+        torch.save(self.grad_l2_norm_to_plot, f"{LOSS_METRICS_FOLDER}{model_type_filename}_grad_norm.pth")
+
         torch.save(self.avg_training_losses_to_plot,
                    f"{LOSS_METRICS_FOLDER}{model_name}/Train/{self.model_config}_loss.pth")
-        torch.save(self.avg_test_losses_to_plot, f"{LOSS_METRICS_FOLDER}{model_name}/Test/{self.model_config}_loss.pth")
+        torch.save(self.avg_test_losses_to_plot,
+                   f"{LOSS_METRICS_FOLDER}{model_name}/Test/{self.model_config}_loss.pth")
+
+        torch.save(self.avg_training_accuracies_to_plot,
+                   f"{LOSS_METRICS_FOLDER}{model_name}/Train/{self.model_config}_accuracy.pth")
+        torch.save(self.avg_test_accuracies_to_plot,
+                   f"{LOSS_METRICS_FOLDER}{model_name}/Test/{self.model_config}_accuracy.pth")
 
         # Get learned parameters (excluding p variables) and convert into single tensor - for comparison
         parameters = [parameter.data.flatten() for parameter in model.parameters()]

@@ -38,13 +38,13 @@ NUM_PER_CLASS_TEST_FASHION = 20  # Specify how many test examples per class to i
 
 def get_subset_examples(train_data, test_data, num_classes, num_train, num_test):
     """
-    Create subset of dataset with [num_train] examples of each class (for all [num_classes] classes)
+    Create train and test subsets with [num_train/num_test] examples of each class (for all [num_classes] classes)
     :param train_data: training dataset
     :param test_data: test dataset
     :param num_classes: number of classes in dataset
     :param num_train: number of examples per class to extract from training dataset
     :param num_test: number of examples per class to extract from test dataset
-    :return: train and test indices to use via subset
+    :return: train and test subsets
     """
     train_subset_idx = torch.zeros(0, dtype=torch.long)
     test_subset_idx = torch.zeros_like(train_subset_idx)
@@ -55,13 +55,10 @@ def get_subset_examples(train_data, test_data, num_classes, num_train, num_test)
         # Concatenate to list of indices to subset train/test datasets
         train_subset_idx = torch.cat((train_subset_idx, train_idx_to_add))
         test_subset_idx = torch.cat((test_subset_idx, test_idx_to_add))
-    return train_subset_idx, test_subset_idx
+    return Subset(train_data, train_subset_idx), Subset(test_data, test_subset_idx)
 
 
 # Set up subsets for training/testing
-fashion_train_subset_idx, fashion_test_subset_idx = get_subset_examples(fashion_training_data, fashion_test_data,
-                                                                        num_fashion_classes,
-                                                                        NUM_PER_CLASS_TRAIN_FASHION,
-                                                                        NUM_PER_CLASS_TEST_FASHION)
-fashion_training_data_subset = Subset(fashion_training_data, fashion_train_subset_idx)
-fashion_test_data_subset = Subset(fashion_test_data, fashion_test_subset_idx)
+fashion_train_subset, fashion_test_subset = get_subset_examples(fashion_training_data, fashion_test_data,
+                                                                num_fashion_classes, NUM_PER_CLASS_TRAIN_FASHION,
+                                                                NUM_PER_CLASS_TEST_FASHION)
