@@ -171,7 +171,7 @@ class Workflow:
             self.avg_test_accuracies_to_plot[self.plot_idx] = correct
             self.plot_idx += 1
 
-        print(f"Test loss (avg): {test_loss:>8f}")
+        print(f"Test loss (avg): {test_loss:>8f}" + ("\n" if reconstruction else ""))
         if not reconstruction:
             print(f"Test Accuracy: {(100 * correct):>0.1f}%\n")
 
