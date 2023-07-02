@@ -32,7 +32,7 @@ if __name__ == '__main__':
         converged = experiment.train(vae_model, mse, sgd, epoch, reconstruction=True)
         experiment.test(vae_model, mse, epoch, reconstruction=True)
         if converged:
-            experiment.truncate_losses_to_plot()
+            experiment.truncate_metrics_to_plot()
             break
 
     # Save model and losses/metrics for further analysis and plotting

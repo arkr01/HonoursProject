@@ -11,7 +11,7 @@ from networks import *
 
 if __name__ == '__main__':
     # Set up data loaders, set hyperparameters, etc.
-    experiment = Workflow(fashion_training_data, fashion_test_data, num_epochs=30)
+    experiment = Workflow(fashion_training_data, fashion_test_data)
 
     # Define model and loss function/optimiser
     logistic_model = MultinomialLogisticRegression(input_dim=fashion_img_length, num_classes=num_fashion_classes)
@@ -23,7 +23,7 @@ if __name__ == '__main__':
     logistic_model = logistic_model.to(device)
 
     cross_entropy = nn.CrossEntropyLoss()
-    sgd = torch.optim.SGD(logistic_model.parameters(), lr=experiment.lr, weight_decay=experiment.l2_param)
+    sgd = torch.optim.SGD(logistic_model.parameters(), lr=experiment.lr)  # , weight_decay=experiment.l2_param)
 
     print("\nUsing", device, "\n")
 
@@ -32,7 +32,7 @@ if __name__ == '__main__':
         converged = experiment.train(logistic_model, cross_entropy, sgd, epoch)
         experiment.test(logistic_model, cross_entropy, epoch)
         if converged:
-            experiment.truncate_losses_to_plot()
+            experiment.truncate_metrics_to_plot()
             break
 
     # Save model and losses/metrics for further analysis and plotting

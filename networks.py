@@ -53,8 +53,8 @@ class ModuleWrapper(nn.Module):
 # Used for zero-initialisation
 def _init_weights_zero(module):
     if isinstance(module, nn.Linear):
-        module.weight.data.zero_()
-        module.bias.data.zero_()
+        module.weight.detach().zero_()
+        module.bias.detach().zero_()
 
 
 class MultinomialLogisticRegression(nn.Module):
