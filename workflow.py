@@ -7,7 +7,6 @@ from os import mkdir, environ
 from os.path import exists
 from math import inf
 
-import torch.linalg
 from numpy import log10
 from torch.utils.data import DataLoader
 
