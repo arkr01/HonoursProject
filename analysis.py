@@ -35,7 +35,8 @@ logistic_invex_train_obj = torch.load(LOSS_METRICS_FOLDER + 'logistic_model/Trai
 logistic_invex_test_obj = torch.load(LOSS_METRICS_FOLDER + 'logistic_model/Test/with_invex_gd_objective.pth').to('cpu')
 logistic_l2_train_obj = torch.load(LOSS_METRICS_FOLDER + 'logistic_model/Train/with_l2_gd_objective.pth').to('cpu')
 logistic_l2_test_obj = torch.load(LOSS_METRICS_FOLDER + 'logistic_model/Test/with_l2_gd_objective.pth').to('cpu')
-logistic_invex_l2_train_obj = torch.load(LOSS_METRICS_FOLDER + 'logistic_model/Test/with_invex_l2_gd_objective.pth').to(
+logistic_invex_l2_train_obj = torch.load(LOSS_METRICS_FOLDER +
+                                         'logistic_model/Train/with_invex_l2_gd_objective.pth').to(
     'cpu')
 logistic_invex_l2_test_obj = torch.load(LOSS_METRICS_FOLDER + 'logistic_model/Test/with_invex_l2_gd_objective.pth').to(
     'cpu')
@@ -50,6 +51,7 @@ logistic_invex_l2_grad_norm = torch.load(LOSS_METRICS_FOLDER + 'logistic_model/w
 unregularised_params = torch.load(LOSS_METRICS_FOLDER + 'logistic_model/with_gd_parameters.pth')
 invex_params = torch.load(LOSS_METRICS_FOLDER + 'logistic_model/with_invex_gd_parameters.pth')
 l2_params = torch.load(LOSS_METRICS_FOLDER + 'logistic_model/with_l2_gd_parameters.pth')
+both_params = torch.load(LOSS_METRICS_FOLDER + 'logistic_model/with_invex_l2_gd_parameters.pth')
 
 with torch.no_grad():
     # Plot train/test losses for different models
@@ -62,8 +64,8 @@ with torch.no_grad():
     plt.xlabel('Epochs')
     plt.ylabel('Avg Train Loss')
     plt.title('Multinomial Logistic Regression')
-    plt.savefig(PLOTS_FOLDER + 'logistic_model/Train/unreg_invex_l2_loss.jpg')
-    # plt.savefig(PLOTS_FOLDER + 'logistic_model/Train/unreg_invex_l2_loss.eps')
+    plt.savefig(PLOTS_FOLDER + 'logistic_model/Train/both_unreg_invex_l2_loss.jpg')
+    # plt.savefig(PLOTS_FOLDER + 'logistic_model/Train/both_unreg_invex_l2_loss.eps')
 
     plt.figure()
     plt.plot(epochs_to_plot, logistic_unreg_test_loss, 'k')
@@ -74,8 +76,8 @@ with torch.no_grad():
     plt.xlabel('Epochs')
     plt.ylabel('Avg Test Loss')
     plt.title('Multinomial Logistic Regression')
-    plt.savefig(PLOTS_FOLDER + 'logistic_model/Test/unreg_invex_l2_loss.jpg')
-    # plt.savefig(PLOTS_FOLDER + 'logistic_model/Test/unreg_invex_l2_loss.eps')
+    plt.savefig(PLOTS_FOLDER + 'logistic_model/Test/both_unreg_invex_l2_loss.jpg')
+    # plt.savefig(PLOTS_FOLDER + 'logistic_model/Test/both_unreg_invex_l2_loss.eps')
 
     # Plot train/test accuracies for different models
     plt.figure()
@@ -85,10 +87,10 @@ with torch.no_grad():
     plt.plot(epochs_to_plot, logistic_invex_l2_train_obj, 'y')
     plt.legend(['Unregularised', 'Invex', r'$\ell_2$', 'Both'])
     plt.xlabel('Epochs')
-    plt.ylabel('Train Objective')
+    plt.ylabel('Avg Train Objective')
     plt.title('Multinomial Logistic Regression')
-    plt.savefig(PLOTS_FOLDER + 'logistic_model/Train/unreg_invex_l2_obj.jpg')
-    # plt.savefig(PLOTS_FOLDER + 'logistic_model/Train/unreg_invex_l2_obj.eps')
+    plt.savefig(PLOTS_FOLDER + 'logistic_model/Train/both_unreg_invex_l2_obj.jpg')
+    # plt.savefig(PLOTS_FOLDER + 'logistic_model/Train/both_unreg_invex_l2_obj.eps')
 
     plt.figure()
     plt.plot(epochs_to_plot, logistic_unreg_test_obj, 'k')
@@ -97,10 +99,10 @@ with torch.no_grad():
     plt.plot(epochs_to_plot, logistic_invex_l2_test_obj, 'y')
     plt.legend(['Unregularised', 'Invex', r'$\ell_2$', 'Both'])
     plt.xlabel('Epochs')
-    plt.ylabel('Test Objective')
+    plt.ylabel('Avg Test Objective')
     plt.title('Multinomial Logistic Regression')
-    plt.savefig(PLOTS_FOLDER + 'logistic_model/Test/unreg_invex_l2_obj.jpg')
-    # plt.savefig(PLOTS_FOLDER + 'logistic_model/Test/unreg_invex_l2_obj.eps')
+    plt.savefig(PLOTS_FOLDER + 'logistic_model/Test/both_unreg_invex_l2_obj.jpg')
+    # plt.savefig(PLOTS_FOLDER + 'logistic_model/Test/both_unreg_invex_l2_obj.eps')
 
     plt.figure()
     plt.plot(epochs_to_plot, logistic_unreg_train_loss, 'k')
@@ -116,7 +118,7 @@ with torch.no_grad():
     plt.xlabel('Epochs')
     plt.ylabel('Avg Train')
     plt.title('Multinomial Logistic Regression')
-    plt.savefig(PLOTS_FOLDER + 'logistic_model/Test/unreg_invex_l2_both.jpg')
+    plt.savefig(PLOTS_FOLDER + 'logistic_model/Train/both_unreg_invex_l2_both.jpg')
 
     plt.figure()
     plt.plot(epochs_to_plot, logistic_unreg_test_loss, 'k')
@@ -132,7 +134,7 @@ with torch.no_grad():
     plt.xlabel('Epochs')
     plt.ylabel('Avg Test')
     plt.title('Multinomial Logistic Regression')
-    plt.savefig(PLOTS_FOLDER + 'logistic_model/Test/unreg_invex_l2_both.jpg')
+    plt.savefig(PLOTS_FOLDER + 'logistic_model/Test/both_unreg_invex_l2_both.jpg')
 
     # Plot L2 gradient norm convergence for different models
     plt.figure()
@@ -144,12 +146,12 @@ with torch.no_grad():
     plt.xlabel('Epochs')
     plt.ylabel(r'$\ell_\infty$ Gradient Norm')
     plt.title('Multinomial Logistic Regression')
-    plt.savefig(PLOTS_FOLDER + 'logistic_model/unreg_invex_l2_grad.jpg')
-    # plt.savefig(PLOTS_FOLDER + 'logistic_model/unreg_invex_l2_grad.eps')
+    plt.savefig(PLOTS_FOLDER + 'logistic_model/both_unreg_invex_l2_grad.jpg')
+    # plt.savefig(PLOTS_FOLDER + 'logistic_model/both_unreg_invex_l2_grad.eps')
 
     plt.show()
 
-    # Infinity norm between invex and L2-regularised solutions - measure of similarity
+    # Infinity norms between all solutions - measure of similarity
     with open(f'{LOSS_METRICS_FOLDER}/logistic_model/inf_norm_diffs.txt', 'w') as f:
         f.write("||invex - unregularised||_inf = " + str(torch.linalg.vector_norm((invex_params - unregularised_params),
                                                                                   ord=inf).item()) + "\n")
@@ -157,3 +159,9 @@ with torch.no_grad():
                                                                                ord=inf).item()) + "\n")
         f.write("||invex - L2||_inf = " + str(torch.linalg.vector_norm((invex_params - l2_params), ord=inf).item())
                 + "\n")
+        f.write("||invex - both||_inf = " + str(torch.linalg.vector_norm((invex_params - both_params), ord=inf).item())
+                + "\n")
+        f.write("||both - L2||_inf = " + str(torch.linalg.vector_norm((both_params - l2_params), ord=inf).item())
+                + "\n")
+        f.write("||both - unregularised||_inf = " + str(torch.linalg.vector_norm((both_params - unregularised_params), 
+                                                                                 ord=inf).item()) + "\n")
