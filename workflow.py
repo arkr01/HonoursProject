@@ -12,8 +12,8 @@ from torch.utils.data import DataLoader
 
 from datasets import *
 
-MODELS_FOLDER = root_dir + '/Models/'
-LOSS_METRICS_FOLDER = root_dir + '/Losses_Metrics/'
+MODELS_FOLDER = root_dir + '/Models_rgp/'
+LOSS_METRICS_FOLDER = root_dir + '/Losses_Metrics_rgp/'
 PLOTS_RESULTS_FOLDER = root_dir + '/Plots_Results/'
 
 # Set device and reproducibility configurations as per below:
@@ -27,7 +27,7 @@ environ["CUBLAS_WORKSPACE_CONFIG"] = ":16:8"
 class Workflow:
     """ Set up general workflow for hyperparameters, configuration constants, training, testing, and saving. """
 
-    def __init__(self, training_set, test_set, num_epochs=int(2e4), grad_norm_tol=1e-8, lr=None, compare_invex=True,
+    def __init__(self, training_set, test_set, num_epochs=int(1e6), grad_norm_tol=1e-8, lr=None, compare_invex=True,
                  invex_val=1e-2, compare_l2=False, l2_val=1e-2, compare_dropout=False, compare_batch_norm=False,
                  compare_data_aug=False, sgd=True, batch_size=64):
         """
