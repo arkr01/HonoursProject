@@ -32,8 +32,8 @@ cifar10_classes = cifar10_training_data.classes
 cifar100_classes = cifar100_training_data.classes
 
 # Create subsets of train/test datasets
-NUM_PER_CLASS_TRAIN_FASHION = 100  # Specify how many training examples per class to include in subset
-NUM_PER_CLASS_TEST_FASHION = 20  # Specify how many test examples per class to include in subset
+NUM_PER_CLASS_TRAIN_FASHION = 10  # Specify how many training examples per class to include in subset
+NUM_PER_CLASS_TEST_FASHION = 2  # Specify how many test examples per class to include in subset
 
 
 def get_subset_examples(train_data, test_data, num_classes, num_train, num_test):
@@ -59,6 +59,6 @@ def get_subset_examples(train_data, test_data, num_classes, num_train, num_test)
 
 
 # Set up subsets for training/testing
-fashion_train_subset, fashion_test_subset = get_subset_examples(fashion_training_data, fashion_test_data,
-                                                                num_fashion_classes, NUM_PER_CLASS_TRAIN_FASHION,
-                                                                NUM_PER_CLASS_TEST_FASHION)
+fashion_training_subset, fashion_test_subset = get_subset_examples(fashion_training_data, fashion_test_data,
+                                                                   num_fashion_classes, NUM_PER_CLASS_TRAIN_FASHION,
+                                                                   NUM_PER_CLASS_TEST_FASHION)

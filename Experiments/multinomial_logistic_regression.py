@@ -11,7 +11,7 @@ from networks import *
 
 if __name__ == '__main__':
     # Set up data loaders, set hyperparameters, etc.
-    experiment = Workflow(fashion_training_data, fashion_test_data)
+    experiment = Workflow(fashion_training_subset, fashion_test_subset, sgd=False)
 
     # Define model and loss function/optimiser
     logistic_model = MultinomialLogisticRegression(input_dim=fashion_img_length, num_classes=num_fashion_classes)
