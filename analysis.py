@@ -56,14 +56,14 @@ logistic_invex_l2_test_obj = torch.load(LOSS_METRICS_FOLDER +
 logistic_unreg_grad_norm = torch.load(LOSS_METRICS_FOLDER + f'logistic_model/{unreg_or_gd}_grad_norm.pth').to('cpu')
 logistic_invex_grad_norm = torch.load(LOSS_METRICS_FOLDER +
                                       f'logistic_model/with_invex_{reg_or_gd}grad_norm.pth').to('cpu')
-logistic_l2_grad_norm = torch.load(LOSS_METRICS_FOLDER + f'logistic_model/with_l2_grad_{reg_or_gd}norm.pth').to('cpu')
+logistic_l2_grad_norm = torch.load(LOSS_METRICS_FOLDER + f'logistic_model/with_l2_{reg_or_gd}grad_norm.pth').to('cpu')
 logistic_invex_l2_grad_norm = torch.load(LOSS_METRICS_FOLDER +
-                                         'logistic_model/with_invex_l2_{reg_or_gd}grad_norm.pth').to('cpu')
+                                         f'logistic_model/with_invex_l2_{reg_or_gd}grad_norm.pth').to('cpu')
 
 unregularised_params = torch.load(LOSS_METRICS_FOLDER + f'logistic_model/{unreg_or_gd}_parameters.pth')
 invex_params = torch.load(LOSS_METRICS_FOLDER + f'logistic_model/with_invex_{reg_or_gd}parameters.pth')
 l2_params = torch.load(LOSS_METRICS_FOLDER + f'logistic_model/with_l2_{reg_or_gd}parameters.pth')
-both_params = torch.load(LOSS_METRICS_FOLDER + f'logistic_model/with_invex_l2_parameters.pth')
+both_params = torch.load(LOSS_METRICS_FOLDER + f'logistic_model/with_invex_l2_{reg_or_gd}parameters.pth')
 
 with torch.no_grad():
     # Plot train/test losses for different models
