@@ -14,7 +14,7 @@ from datasets import *
 
 MODELS_FOLDER = root_dir + '/Models/'
 LOSS_METRICS_FOLDER = root_dir + '/Losses_Metrics/'
-PLOTS_FOLDER = root_dir + '/Plots/'
+PLOTS_RESULTS_FOLDER = root_dir + '/Plots_Results/'
 
 # Set device and reproducibility configurations as per below:
 # https://pytorch.org/docs/stable/notes/randomness.html#reproducibility
@@ -236,12 +236,22 @@ class Workflow:
             mkdir(LOSS_METRICS_FOLDER + model_name)
             mkdir(LOSS_METRICS_FOLDER + model_name + '/Train/')
             mkdir(LOSS_METRICS_FOLDER + model_name + '/Test/')
-        if not exists(PLOTS_FOLDER):
-            mkdir(PLOTS_FOLDER)
-        if not exists(PLOTS_FOLDER + model_name):
-            mkdir(PLOTS_FOLDER + model_name)
-            mkdir(PLOTS_FOLDER + model_name + '/Train')
-            mkdir(PLOTS_FOLDER + model_name + '/Test')
+        if not exists(PLOTS_RESULTS_FOLDER):
+            mkdir(PLOTS_RESULTS_FOLDER)
+        if not exists(PLOTS_RESULTS_FOLDER + model_name):
+            mkdir(PLOTS_RESULTS_FOLDER + model_name)
+            mkdir(PLOTS_RESULTS_FOLDER + model_name + '/InfNormDiffs')
+            mkdir(PLOTS_RESULTS_FOLDER + model_name + '/Gradient Norm')
+
+            mkdir(PLOTS_RESULTS_FOLDER + model_name + '/Train')
+            mkdir(PLOTS_RESULTS_FOLDER + model_name + '/Train/Loss')
+            mkdir(PLOTS_RESULTS_FOLDER + model_name + '/Train/Objective')
+            mkdir(PLOTS_RESULTS_FOLDER + model_name + '/Train/Both')
+
+            mkdir(PLOTS_RESULTS_FOLDER + model_name + '/Test')
+            mkdir(PLOTS_RESULTS_FOLDER + model_name + '/Test/Loss')
+            mkdir(PLOTS_RESULTS_FOLDER + model_name + '/Test/Objective')
+            mkdir(PLOTS_RESULTS_FOLDER + model_name + '/Test/Both')
 
         # Save model state dict, L2 gradient norm, avg train/test losses and objectives (to plot), and parameters
         model_type_filename = f"{model_name}/{self.model_config}"
