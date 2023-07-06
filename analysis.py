@@ -15,7 +15,7 @@ matplotlib.rcParams["text.usetex"] = True  # Allows LaTeX in titles/labels/legen
 epochs_to_plot = torch.load(LOSS_METRICS_FOLDER + 'logistic_model/epochs_to_plot.pth').to('cpu')
 
 # What experiment we're plotting
-experiment_name = "gd_lrst_both_reduced_1e6epochs_unreg_invex_l2"
+experiment_name = "gd_lr0.01_both_reduced_1e6epochs_unreg_invex_l2"
 if "wie" in LOSS_METRICS_FOLDER or "rgp" in LOSS_METRICS_FOLDER:
     experiment_name = "full_" + experiment_name
 unreg_or_gd = "unregularised" if experiment_name[0] == 's' else "with_gd"

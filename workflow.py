@@ -83,8 +83,11 @@ class Workflow:
         model_batch_norm = "_batch_norm" if self.compare_batch_norm else ""
         model_data_aug = "_data_aug" if self.compare_data_aug else ""
         model_gd = "_gd" if not self.sgd else ""
+        model_lr = f"_lr{self.lr}" if lr is not None else ""
+        model_lambda = f"_lambda{invex_val}" if invex_val != 1e-2 else ""
 
-        choices = model_invex + model_l2 + model_dropout + model_batch_norm + model_data_aug + model_gd
+        choices = model_invex + model_l2 + model_dropout + model_batch_norm + model_data_aug + model_gd + model_lr
+        choices += model_lambda
         self.model_config = "with" + choices if len(choices) else "unregularised"
 
         self.epochs_to_plot = torch.logspace(0, log10(self.num_epochs), 100).long().unique() - 1
@@ -124,12 +127,12 @@ class Workflow:
             if batch % 100 == 0:
                 loss, current = loss.item(), (batch + 1) * len(examples)
                 print(f"loss: {loss:>7f}  [{current:>5d}/{num_examples:>5d}]")
-        
+
         # Calculate average metrics
         avg_loss = total_loss / num_batches
         avg_objective = total_objective / num_batches
         correct /= num_examples
-        
+
         # Print and save
         print(f"\nTrain loss (avg): {avg_loss:>8f}")
         if not reconstruction:
