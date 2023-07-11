@@ -15,55 +15,58 @@ matplotlib.rcParams["text.usetex"] = True  # Allows LaTeX in titles/labels/legen
 epochs_to_plot = torch.load(LOSS_METRICS_FOLDER + 'logistic_model/epochs_to_plot.pth').to('cpu')
 
 # What experiment we're plotting
-experiment_name = "gd_lr0.01_both_reduced_1e6epochs_unreg_invex_l2"
+experiment_name = "gd_lr0.01_lambda0.001_both_reduced_1e6epochs_unreg_invex_l2"
 if "wie" in LOSS_METRICS_FOLDER or "rgp" in LOSS_METRICS_FOLDER:
     experiment_name = "full_" + experiment_name
-unreg_or_gd = "unregularised" if experiment_name[0] == 's' else "with_gd"
+unreg_or_gd = "unregularised_" if experiment_name[0] == 's' else "with_gd_"
 reg_or_gd = "" if experiment_name[0] == 's' else "gd_"
 
 # Train/Test Losses
-logistic_unreg_train_loss = torch.load(LOSS_METRICS_FOLDER + f'logistic_model/Train/{unreg_or_gd}_loss.pth').to('cpu')
-logistic_unreg_test_loss = torch.load(LOSS_METRICS_FOLDER + f'logistic_model/Test/{unreg_or_gd}_loss.pth').to('cpu')
+logistic_unreg_train_loss = torch.load(LOSS_METRICS_FOLDER + f'logistic_model/Train/'
+                                                             f'{unreg_or_gd}lr0.01_lambda0.001_loss.pth').to(
+    'cpu')
+logistic_unreg_test_loss = torch.load(LOSS_METRICS_FOLDER + f'logistic_model/Test/{unreg_or_gd}lr0.01_lambda0.001_loss.pth').to('cpu')
 logistic_invex_train_loss = torch.load(LOSS_METRICS_FOLDER +
-                                       f'logistic_model/Train/with_invex_{reg_or_gd}loss.pth').to('cpu')
+                                       f'logistic_model/Train/with_invex_{reg_or_gd}lr0.01_lambda0.001_loss.pth').to('cpu')
 logistic_invex_test_loss = torch.load(LOSS_METRICS_FOLDER +
-                                      f'logistic_model/Test/with_invex_{reg_or_gd}loss.pth').to('cpu')
-logistic_l2_train_loss = torch.load(LOSS_METRICS_FOLDER + f'logistic_model/Train/with_l2_{reg_or_gd}loss.pth').to('cpu')
-logistic_l2_test_loss = torch.load(LOSS_METRICS_FOLDER + f'logistic_model/Test/with_l2_{reg_or_gd}loss.pth').to('cpu')
+                                      f'logistic_model/Test/with_invex_{reg_or_gd}lr0.01_lambda0.001_loss.pth').to('cpu')
+logistic_l2_train_loss = torch.load(LOSS_METRICS_FOLDER + f'logistic_model/Train/with_l2_{reg_or_gd}lr0.01_lambda0.001_loss.pth').to('cpu')
+logistic_l2_test_loss = torch.load(LOSS_METRICS_FOLDER + f'logistic_model/Test/with_l2_{reg_or_gd}lr0.01_lambda0.001_loss.pth').to('cpu')
 logistic_invex_l2_train_loss = torch.load(LOSS_METRICS_FOLDER +
-                                          f'logistic_model/Train/with_invex_l2_{reg_or_gd}loss.pth').to('cpu')
+                                          f'logistic_model/Train/with_invex_l2_{reg_or_gd}lr0.01_lambda0.001_loss.pth').to('cpu')
 logistic_invex_l2_test_loss = torch.load(LOSS_METRICS_FOLDER +
-                                         f'logistic_model/Test/with_invex_l2_{reg_or_gd}loss.pth').to('cpu')
+                                         f'logistic_model/Test/with_invex_l2_{reg_or_gd}lr0.01_lambda0.001_loss.pth').to('cpu')
 
 # Train/Test Objectives
 logistic_unreg_train_obj = torch.load(LOSS_METRICS_FOLDER +
-                                      f'logistic_model/Train/{unreg_or_gd}_objective.pth').to('cpu')
-logistic_unreg_test_obj = torch.load(LOSS_METRICS_FOLDER + f'logistic_model/Test/{unreg_or_gd}_objective.pth').to('cpu')
+                                      f'logistic_model/Train/{unreg_or_gd}lr0.01_lambda0.001_objective.pth').to('cpu')
+logistic_unreg_test_obj = torch.load(LOSS_METRICS_FOLDER + f'logistic_model/Test/{unreg_or_gd}lr0.01_lambda0.001_objective.pth').to('cpu')
 logistic_invex_train_obj = torch.load(LOSS_METRICS_FOLDER +
-                                      f'logistic_model/Train/with_invex_{reg_or_gd}objective.pth').to('cpu')
+                                      f'logistic_model/Train/with_invex_{reg_or_gd}lr0.01_lambda0.001_objective.pth').to('cpu')
 logistic_invex_test_obj = torch.load(LOSS_METRICS_FOLDER +
-                                     f'logistic_model/Test/with_invex_{reg_or_gd}objective.pth').to('cpu')
+                                     f'logistic_model/Test/with_invex_{reg_or_gd}lr0.01_lambda0.001_objective.pth').to('cpu')
 logistic_l2_train_obj = torch.load(LOSS_METRICS_FOLDER +
-                                   f'logistic_model/Train/with_l2_{reg_or_gd}objective.pth').to('cpu')
+                                   f'logistic_model/Train/with_l2_{reg_or_gd}lr0.01_lambda0.001_objective.pth').to('cpu')
 logistic_l2_test_obj = torch.load(LOSS_METRICS_FOLDER +
-                                  f'logistic_model/Test/with_l2_{reg_or_gd}objective.pth').to('cpu')
+                                  f'logistic_model/Test/with_l2_{reg_or_gd}lr0.01_lambda0.001_objective.pth').to('cpu')
 logistic_invex_l2_train_obj = torch.load(LOSS_METRICS_FOLDER +
-                                         f'logistic_model/Train/with_invex_l2_{reg_or_gd}objective.pth').to('cpu')
+                                         f'logistic_model/Train/with_invex_l2_{reg_or_gd}lr0.01_lambda0.001_objective.pth').to('cpu')
 logistic_invex_l2_test_obj = torch.load(LOSS_METRICS_FOLDER +
-                                        f'logistic_model/Test/with_invex_l2_{reg_or_gd}objective.pth').to('cpu')
+                                        f'logistic_model/Test/with_invex_l2_{reg_or_gd}lr0.01_lambda0.001_objective.pth').to('cpu')
 
 # L2 Gradient Norms
-logistic_unreg_grad_norm = torch.load(LOSS_METRICS_FOLDER + f'logistic_model/{unreg_or_gd}_grad_norm.pth').to('cpu')
+logistic_unreg_grad_norm = torch.load(LOSS_METRICS_FOLDER + f'logistic_model/{unreg_or_gd}lr0.01_lambda0.001_grad_norm.pth').to('cpu')
 logistic_invex_grad_norm = torch.load(LOSS_METRICS_FOLDER +
-                                      f'logistic_model/with_invex_{reg_or_gd}grad_norm.pth').to('cpu')
-logistic_l2_grad_norm = torch.load(LOSS_METRICS_FOLDER + f'logistic_model/with_l2_{reg_or_gd}grad_norm.pth').to('cpu')
+                                      f'logistic_model/with_invex_{reg_or_gd}lr0.01_lambda0.001_grad_norm.pth').to('cpu')
+logistic_l2_grad_norm = torch.load(LOSS_METRICS_FOLDER + f'logistic_model/with_l2_{reg_or_gd}lr0.01_lambda0.001_grad_norm.pth').to('cpu')
 logistic_invex_l2_grad_norm = torch.load(LOSS_METRICS_FOLDER +
-                                         f'logistic_model/with_invex_l2_{reg_or_gd}grad_norm.pth').to('cpu')
+                                         f'logistic_model/with_invex_l2_{reg_or_gd}lr0.01_lambda0.001_grad_norm.pth').to('cpu')
 
-unregularised_params = torch.load(LOSS_METRICS_FOLDER + f'logistic_model/{unreg_or_gd}_parameters.pth')
-invex_params = torch.load(LOSS_METRICS_FOLDER + f'logistic_model/with_invex_{reg_or_gd}parameters.pth')
-l2_params = torch.load(LOSS_METRICS_FOLDER + f'logistic_model/with_l2_{reg_or_gd}parameters.pth')
-both_params = torch.load(LOSS_METRICS_FOLDER + f'logistic_model/with_invex_l2_{reg_or_gd}parameters.pth')
+# Model parameters (without p variables)
+unregularised_params = torch.load(LOSS_METRICS_FOLDER + f'logistic_model/{unreg_or_gd}lr0.01_lambda0.001_parameters.pth')
+invex_params = torch.load(LOSS_METRICS_FOLDER + f'logistic_model/with_invex_{reg_or_gd}lr0.01_lambda0.001_parameters.pth')
+l2_params = torch.load(LOSS_METRICS_FOLDER + f'logistic_model/with_l2_{reg_or_gd}lr0.01_lambda0.001_parameters.pth')
+both_params = torch.load(LOSS_METRICS_FOLDER + f'logistic_model/with_invex_l2_{reg_or_gd}lr0.01_lambda0.001_parameters.pth')
 
 with torch.no_grad():
     # Plot train/test losses for different models
@@ -75,7 +78,7 @@ with torch.no_grad():
     plt.legend(['Unregularised', 'Invex', r'$\ell_2$', 'Both'])
     plt.xlabel('Epochs')
     plt.ylabel('Avg Train Loss')
-    plt.title('Multinomial Logistic Regression')
+    plt.title(r'Multinomial Logistic Regression (lr=$0.01$, $\lambda=0.001$)')
     plt.savefig(PLOTS_RESULTS_FOLDER + f'logistic_model/Train/Loss/{experiment_name}.jpg')
     # plt.savefig(PLOTS_RESULTS_FOLDER + f'logistic_model/Train/Loss/{experiment_name}.eps')
 
@@ -87,7 +90,7 @@ with torch.no_grad():
     plt.legend(['Unregularised', 'Invex', r'$\ell_2$', 'Both'])
     plt.xlabel('Epochs')
     plt.ylabel('Avg Test Loss')
-    plt.title('Multinomial Logistic Regression')
+    plt.title(r'Multinomial Logistic Regression (lr=$0.01$, $\lambda=0.001$)')
     plt.savefig(PLOTS_RESULTS_FOLDER + f'logistic_model/Test/Loss/{experiment_name}.jpg')
     # plt.savefig(PLOTS_RESULTS_FOLDER + f'logistic_model/Test/Loss/{experiment_name}.eps')
 
@@ -100,7 +103,7 @@ with torch.no_grad():
     plt.legend(['Unregularised', 'Invex', r'$\ell_2$', 'Both'])
     plt.xlabel('Epochs')
     plt.ylabel('Avg Train Objective')
-    plt.title('Multinomial Logistic Regression')
+    plt.title(r'Multinomial Logistic Regression (lr=$0.01$, $\lambda=0.001$)')
     plt.savefig(PLOTS_RESULTS_FOLDER + f'logistic_model/Train/Objective/{experiment_name}.jpg')
     # plt.savefig(PLOTS_RESULTS_FOLDER + f'logistic_model/Train/Objective/{experiment_name}.eps')
 
@@ -112,7 +115,7 @@ with torch.no_grad():
     plt.legend(['Unregularised', 'Invex', r'$\ell_2$', 'Both'])
     plt.xlabel('Epochs')
     plt.ylabel('Avg Test Objective')
-    plt.title('Multinomial Logistic Regression')
+    plt.title(r'Multinomial Logistic Regression (lr=$0.01$, $\lambda=0.001$)')
     plt.savefig(PLOTS_RESULTS_FOLDER + f'logistic_model/Test/Objective/{experiment_name}.jpg')
     # plt.savefig(PLOTS_RESULTS_FOLDER + f'logistic_model/Test/Objective/{experiment_name}.eps')
 
@@ -129,7 +132,7 @@ with torch.no_grad():
                 'Both O'])
     plt.xlabel('Epochs')
     plt.ylabel('Avg Train')
-    plt.title('Multinomial Logistic Regression')
+    plt.title(r'Multinomial Logistic Regression (lr=$0.01$, $\lambda=0.001$)')
     plt.savefig(PLOTS_RESULTS_FOLDER + f'logistic_model/Train/Both/{experiment_name}.jpg')
     # plt.savefig(PLOTS_RESULTS_FOLDER + f'logistic_model/Train/Both/{experiment_name}.eps')
 
@@ -146,7 +149,7 @@ with torch.no_grad():
                 'Both O'])
     plt.xlabel('Epochs')
     plt.ylabel('Avg Test')
-    plt.title('Multinomial Logistic Regression')
+    plt.title(r'Multinomial Logistic Regression (lr=$0.01$, $\lambda=0.001$)')
     plt.savefig(PLOTS_RESULTS_FOLDER + f'logistic_model/Test/Both/{experiment_name}.jpg')
     # plt.savefig(PLOTS_RESULTS_FOLDER + f'logistic_model/Test/Both/{experiment_name}.eps')
 
@@ -159,7 +162,7 @@ with torch.no_grad():
     plt.legend(['Unregularised', 'Invex', r'$\ell_2$', 'Both'])
     plt.xlabel('Epochs')
     plt.ylabel(r'$\ell_\infty$ Gradient Norm')
-    plt.title('Multinomial Logistic Regression')
+    plt.title(r'Multinomial Logistic Regression (lr=$0.01$, $\lambda=0.001$)')
     plt.savefig(PLOTS_RESULTS_FOLDER + f'logistic_model/Gradient Norm/{experiment_name}.jpg')
     # plt.savefig(PLOTS_RESULTS_FOLDER + f'logistic_model/Gradient Norm/{experiment_name}.eps')
 

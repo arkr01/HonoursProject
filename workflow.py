@@ -100,10 +100,10 @@ class Workflow:
 
         self.training_loader = DataLoader(training_set, batch_size=self.batch_size)
         self.test_loader = DataLoader(test_set, batch_size=self.batch_size)
+        self.num_train_batches = len(self.training_loader)
 
     def train(self, model, loss_fn, optimizer, epoch, reconstruction=False):
         num_examples = len(self.training_loader.dataset)
-        num_batches = len(self.training_loader)
         model.train()
 
         total_loss = total_objective = correct = 0
@@ -129,8 +129,8 @@ class Workflow:
                 print(f"loss: {loss:>7f}  [{current:>5d}/{num_examples:>5d}]")
 
         # Calculate average metrics
-        avg_loss = total_loss / num_batches
-        avg_objective = total_objective / num_batches
+        avg_loss = total_loss / self.num_train_batches
+        avg_objective = total_objective / self.num_train_batches
         correct /= num_examples
 
         # Print and save
@@ -166,8 +166,8 @@ class Workflow:
         return grad_norm <= self.grad_norm_tol
 
     def test(self, model, loss_fn, epoch, reconstruction=False):
+        test_batches = len(self.test_loader)
         num_examples = len(self.test_loader.dataset)
-        num_batches = len(self.test_loader)
         model.eval()
         test_loss = test_objective = correct = 0
         with torch.no_grad():
@@ -180,8 +180,8 @@ class Workflow:
                 test_objective += objective.item()
                 if not reconstruction:
                     correct += (prediction.argmax(1) == targets).type(torch.float).sum().item()
-        test_loss /= num_batches
-        test_objective /= num_batches
+        test_loss /= test_batches
+        test_objective /= test_batches
         correct /= num_examples
 
         # Save test loss (only update plot_idx here as test is always called after train)
@@ -198,11 +198,14 @@ class Workflow:
         # TODO generalise for other regularisation methods and write docstring
         invex_objective = calculate_loss(prediction, examples, targets, loss_fn, reconstruction)
 
-        # minor code optimisation: if no invex regularisation, invex loss == invex objective
+        # minor code optimisation: if no invex regularisation, invex loss == invex objective. Also, exclude p
+        # variables when performing L2 regularisation
         loss = invex_objective if not self.compare_invex else calculate_loss(model.module(examples), examples,
                                                                              targets, loss_fn, reconstruction)
-        objective = invex_objective + (0 if not self.compare_l2 else 0.5 * self.l2_param * sum(p.pow(2.0).sum() for p in
-                                                                                               model.parameters()))
+        parameters_to_consider = list(model.parameters())[:-self.num_train_batches] if self.compare_invex else \
+            model.parameters()
+        objective = invex_objective + (0 if not self.compare_l2
+                                       else 0.5 * self.l2_param * sum(p.pow(2.0).sum() for p in parameters_to_consider))
         return loss, objective
 
     def truncate_metrics_to_plot(self):
@@ -277,8 +280,7 @@ class Workflow:
         parameters = [parameter.detach().flatten() for parameter in model.parameters()]
 
         # Remove p variables if they exist
-        num_batches = len(self.training_loader)
-        parameters_no_p = parameters[:-num_batches] if self.compare_invex else parameters
+        parameters_no_p = parameters[:-self.num_train_batches] if self.compare_invex else parameters
         torch.save(torch.cat(parameters_no_p), f"{LOSS_METRICS_FOLDER}{model_type_filename}_parameters.pth")
 
         print(f"Saved PyTorch Model State and training losses for {model_type_filename}")
