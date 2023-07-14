@@ -207,7 +207,7 @@ class Workflow:
         parameters_to_consider = list(model.parameters())[:-self.num_train_batches] if self.compare_invex else \
             model.parameters()
         objective = invex_objective + (0 if not self.compare_l2
-                                       else self.l2_param * sum(p.pow(2.0).sum() for p in parameters_to_consider))
+                                       else 0.5 * self.l2_param * sum(p.pow(2.0).sum() for p in parameters_to_consider))
         return loss, objective
 
     def calculate_loss(self, model_output, examples, targets, loss_fn):
