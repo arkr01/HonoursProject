@@ -57,6 +57,18 @@ def _init_weights_zero(module):
         module.bias.detach().zero_()
 
 
+class LinearLeastSquares(nn.Module):
+    """
+    Implements linear least squares regression
+    """
+    def __init__(self, input_dim):
+        super().__init__()
+        self.x = nn.Parameter(torch.zeros(input_dim), requires_grad=True)
+
+    def forward(self, A):
+        return torch.mv(A, self.x)
+
+
 class MultinomialLogisticRegression(nn.Module):
     """
     Implements multinomial logistic regression

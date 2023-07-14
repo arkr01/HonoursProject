@@ -3,12 +3,19 @@
 
     Author: Adrian Rahul Kamal Rajkamal
 """
+from os import environ
 from os.path import abspath, dirname
 
 import torch
-from torch.utils.data import Subset
+from torch.utils.data import Subset, TensorDataset
 from torchvision import datasets
 from torchvision.transforms import ToTensor
+
+# Set reproducibility configurations as per below:
+# https://pytorch.org/docs/stable/notes/randomness.html#reproducibility
+torch.use_deterministic_algorithms(True)
+torch.manual_seed(0)
+environ["CUBLAS_WORKSPACE_CONFIG"] = ":16:8"
 
 # Get datasets - train/test split
 root_dir = dirname(abspath(__file__))
@@ -21,6 +28,12 @@ cifar10_test_data = datasets.CIFAR10(root=data_dir, train=False, download=True, 
 
 cifar100_training_data = datasets.CIFAR100(root=data_dir, train=True, download=True, transform=ToTensor())
 cifar100_test_data = datasets.CIFAR100(root=data_dir, train=False, download=True, transform=ToTensor())
+
+synthetic_true_x = torch.randn(8, dtype=torch.float64)
+synthetic_data_A = torch.randn(64, 8, dtype=torch.float64)
+synthetic_data_A *= torch.logspace(start=0, end=-8, steps=synthetic_data_A.size(1), base=2.0, dtype=torch.float64)
+synthetic_data_b = torch.mv(synthetic_data_A, synthetic_true_x)
+synthetic_dataset = TensorDataset(synthetic_data_A, synthetic_data_b)
 
 # Get dataset information
 fashion_img_length = fashion_training_data[0][0].shape[1]

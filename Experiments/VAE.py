@@ -11,7 +11,7 @@ from networks import *
 
 if __name__ == '__main__':
     # Set up data loaders, set hyperparameters, etc.
-    experiment = Workflow(cifar10_training_data, cifar10_test_data, num_epochs=10)
+    experiment = Workflow(cifar10_training_data, cifar10_test_data, num_epochs=10, reconstruction=True)
 
     # Define model and loss function/optimiser
     vae_model = VAE(input_dim=cifar_img_shape[1], num_input_channels=cifar_img_shape[0])
@@ -29,8 +29,8 @@ if __name__ == '__main__':
 
     # Train/test until convergence or specified # epochs
     for epoch in range(experiment.num_epochs):
-        converged = experiment.train(vae_model, mse, sgd, epoch, reconstruction=True)
-        experiment.test(vae_model, mse, epoch, reconstruction=True)
+        converged = experiment.train(vae_model, mse, sgd, epoch)
+        experiment.test(vae_model, mse, epoch)
         if converged:
             experiment.truncate_metrics_to_plot()
             break
