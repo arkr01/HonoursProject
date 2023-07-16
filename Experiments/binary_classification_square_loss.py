@@ -12,7 +12,7 @@ from networks import *
 if __name__ == '__main__':
     # Set up data loaders, set hyperparameters, etc.
     experiment = Workflow(synthetic_dataset_sigmoid, synthetic_dataset_sigmoid, sgd=False, least_sq=True,
-                          grad_norm_tol=-1, num_epochs=int(1e5))
+                          synthetic=True, grad_norm_tol=-1, num_epochs=int(1e7))
 
     # Define model and loss function/optimiser
     binary_classification_model = BinaryClassifier(synthetic_data_A.size(1)).to(dtype=torch.float64)

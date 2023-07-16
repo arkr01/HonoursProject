@@ -14,9 +14,13 @@ matplotlib.rcParams["text.usetex"] = True  # Allows LaTeX in titles/labels/legen
 
 
 # What experiment we're plotting
-model = "binary_logistic_model_fashion_logit"
-plot_title = "(Binary) Logistic Regression"
-experiment_name = "gd_lrst_lambda0.1_l2lambda0.01_both_1e5epochs_unreg_invex_l2"
+model = "least_squares_model_colrank"
+plot_title = "Linear Least Squares Regression"
+lr = 0.005
+lambda_1 = 0.1
+lambda_2 = 0.01
+
+experiment_name = "gd_lrst_lambda0.1_l2lambda0.01_both_unreg_invex_l2"
 if "wie" in LOSS_METRICS_FOLDER or "rgp" in LOSS_METRICS_FOLDER:
     experiment_name = "full_" + experiment_name
 unreg_or_gd = "unregularised_" if experiment_name[0] == 's' else "with_gd_"
@@ -75,7 +79,7 @@ with torch.no_grad():
     plt.legend(['Unregularised', 'Invex', r'$\ell_2$', 'Both'])
     plt.xlabel('Epochs')
     plt.ylabel('Avg Train Loss')
-    plt.title(rf'{plot_title} (lr$\approx0.002$, $\lambda_1=0.1$, $\lambda_2=0.01$)')
+    plt.title(rf'{plot_title} (lr$\approx{lr}$, $\lambda_1={lambda_1}$, $\lambda_2={lambda_2}$)')
     plt.savefig(PLOTS_RESULTS_FOLDER + f'{model}/Train/Loss/{experiment_name}.jpg')
     # plt.savefig(PLOTS_RESULTS_FOLDER + f'{model}/Train/Loss/{experiment_name}.eps')
 
@@ -87,7 +91,7 @@ with torch.no_grad():
     # plt.legend(['Unregularised', 'Invex', r'$\ell_2$', 'Both'])
     # plt.xlabel('Epochs')
     # plt.ylabel('Avg Test Loss')
-    # plt.title(rf'{plot_title} (lr$\approx0.002$, $\lambda_1=0.1$, $\lambda_2=0.01$)')
+    # plt.title(rf'{plot_title} (lr$\approx{lr}$, $\lambda_1={lambda_1}$, $\lambda_2={lambda_2}$)')
     # plt.savefig(PLOTS_RESULTS_FOLDER + f'{model}/Test/Loss/{experiment_name}.jpg')
     # # plt.savefig(PLOTS_RESULTS_FOLDER + f'{model}/Test/Loss/{experiment_name}.eps')
 
@@ -100,7 +104,7 @@ with torch.no_grad():
     plt.legend(['Unregularised', 'Invex', r'$\ell_2$', 'Both'])
     plt.xlabel('Epochs')
     plt.ylabel('Avg Train Objective')
-    plt.title(rf'{plot_title} (lr$\approx0.002$, $\lambda_1=0.1$, $\lambda_2=0.01$)')
+    plt.title(rf'{plot_title} (lr$\approx{lr}$, $\lambda_1={lambda_1}$, $\lambda_2={lambda_2}$)')
     plt.savefig(PLOTS_RESULTS_FOLDER + f'{model}/Train/Objective/{experiment_name}.jpg')
     # plt.savefig(PLOTS_RESULTS_FOLDER + f'{model}/Train/Objective/{experiment_name}.eps')
 
@@ -112,7 +116,7 @@ with torch.no_grad():
     # plt.legend(['Unregularised', 'Invex', r'$\ell_2$', 'Both'])
     # plt.xlabel('Epochs')
     # plt.ylabel('Avg Test Objective')
-    # plt.title(rf'{plot_title} (lr$\approx0.002$, $\lambda_1=0.1$, $\lambda_2=0.01$)')
+    # plt.title(rf'{plot_title} (lr$\approx{lr}$, $\lambda_1={lambda_1}$, $\lambda_2={lambda_2}$)')
     # plt.savefig(PLOTS_RESULTS_FOLDER + f'{model}/Test/Objective/{experiment_name}.jpg')
     # # plt.savefig(PLOTS_RESULTS_FOLDER + f'{model}/Test/Objective/{experiment_name}.eps')
 
@@ -129,7 +133,7 @@ with torch.no_grad():
                 'Both O'])
     plt.xlabel('Epochs')
     plt.ylabel('Avg Train')
-    plt.title(rf'{plot_title} (lr$\approx0.002$, $\lambda_1=0.1$, $\lambda_2=0.01$)')
+    plt.title(rf'{plot_title} (lr$\approx{lr}$, $\lambda_1={lambda_1}$, $\lambda_2={lambda_2}$)')
     plt.savefig(PLOTS_RESULTS_FOLDER + f'{model}/Train/Both/{experiment_name}.jpg')
     # plt.savefig(PLOTS_RESULTS_FOLDER + f'{model}/Train/Both/{experiment_name}.eps')
 
@@ -146,7 +150,7 @@ with torch.no_grad():
     #             'Both O'])
     # plt.xlabel('Epochs')
     # plt.ylabel('Avg Test')
-    # plt.title(rf'{plot_title} (lr$\approx0.002$, $\lambda_1=0.1$, $\lambda_2=0.01$)')
+    # plt.title(rf'{plot_title} (lr$\approx{lr}$, $\lambda_1={lambda_1}$, $\lambda_2={lambda_2}$)')
     # plt.savefig(PLOTS_RESULTS_FOLDER + f'{model}/Test/Both/{experiment_name}.jpg')
     # # plt.savefig(PLOTS_RESULTS_FOLDER + f'{model}/Test/Both/{experiment_name}.eps')
 
@@ -159,7 +163,7 @@ with torch.no_grad():
     plt.legend(['Unregularised', 'Invex', r'$\ell_2$', 'Both'])
     plt.xlabel('Epochs')
     plt.ylabel(r'$\ell_\infty$ Gradient Norm')
-    plt.title(rf'{plot_title} (lr$\approx0.002$, $\lambda_1=0.1$, $\lambda_2=0.01$)')
+    plt.title(rf'{plot_title} (lr$\approx{lr}$, $\lambda_1={lambda_1}$, $\lambda_2={lambda_2}$)')
     plt.savefig(PLOTS_RESULTS_FOLDER + f'{model}/Gradient Norm/{experiment_name}.jpg')
     # plt.savefig(PLOTS_RESULTS_FOLDER + f'{model}/Gradient Norm/{experiment_name}.eps')
 

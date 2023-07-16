@@ -11,8 +11,8 @@ from networks import *
 
 if __name__ == '__main__':
     # Set up data loaders, set hyperparameters, etc.
-    experiment = Workflow(synthetic_dataset, synthetic_dataset, sgd=False, least_sq=True, grad_norm_tol=-1,
-                          num_epochs=int(1e5), compare_l2=True)
+    experiment = Workflow(synthetic_dataset, synthetic_dataset, sgd=False, least_sq=True, synthetic=True,
+                          grad_norm_tol=-1, num_epochs=int(1e7))
 
     # Define model and loss function/optimiser
     least_squares_model = LinearLeastSquares(synthetic_data_A.size(1)).to(dtype=torch.float64)

@@ -30,10 +30,9 @@ cifar10_test_data = datasets.CIFAR10(root=data_dir, train=False, download=True, 
 cifar100_training_data = datasets.CIFAR100(root=data_dir, train=True, download=True, transform=img_to_float64)
 cifar100_test_data = datasets.CIFAR100(root=data_dir, train=False, download=True, transform=img_to_float64)
 
+# Synthetic data
 synthetic_true_x = torch.randn(100, dtype=torch.float64)
 synthetic_data_A = torch.randn(20, 100, dtype=torch.float64)
-# synthetic_data_A *= torch.logspace(start=0, end=-synthetic_data_A.size(1), steps=synthetic_data_A.size(1), base=2.0,
-#                                    dtype=torch.float64)
 synthetic_data_b = torch.mv(synthetic_data_A, synthetic_true_x)
 synthetic_dataset = TensorDataset(synthetic_data_A, synthetic_data_b)
 
