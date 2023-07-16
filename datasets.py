@@ -9,7 +9,7 @@ from os.path import abspath, dirname
 import torch
 from torch.utils.data import Subset, TensorDataset
 from torchvision import datasets
-from torchvision.transforms import ToTensor
+from torchvision.transforms import Compose, ToTensor, ConvertImageDtype
 
 # Set reproducibility configurations as per below:
 # https://pytorch.org/docs/stable/notes/randomness.html#reproducibility
@@ -20,20 +20,25 @@ environ["CUBLAS_WORKSPACE_CONFIG"] = ":16:8"
 # Get datasets - train/test split
 root_dir = dirname(abspath(__file__))
 data_dir = root_dir + '/data'
-fashion_training_data = datasets.FashionMNIST(root=data_dir, train=True, download=True, transform=ToTensor())
-fashion_test_data = datasets.FashionMNIST(root=data_dir, train=False, download=True, transform=ToTensor())
+img_to_float64 = Compose([ToTensor(), ConvertImageDtype(torch.float64)])
+fashion_training_data = datasets.FashionMNIST(root=data_dir, train=True, download=True, transform=img_to_float64)
+fashion_test_data = datasets.FashionMNIST(root=data_dir, train=False, download=True, transform=img_to_float64)
 
-cifar10_training_data = datasets.CIFAR10(root=data_dir, train=True, download=True, transform=ToTensor())
-cifar10_test_data = datasets.CIFAR10(root=data_dir, train=False, download=True, transform=ToTensor())
+cifar10_training_data = datasets.CIFAR10(root=data_dir, train=True, download=True, transform=img_to_float64)
+cifar10_test_data = datasets.CIFAR10(root=data_dir, train=False, download=True, transform=img_to_float64)
 
-cifar100_training_data = datasets.CIFAR100(root=data_dir, train=True, download=True, transform=ToTensor())
-cifar100_test_data = datasets.CIFAR100(root=data_dir, train=False, download=True, transform=ToTensor())
+cifar100_training_data = datasets.CIFAR100(root=data_dir, train=True, download=True, transform=img_to_float64)
+cifar100_test_data = datasets.CIFAR100(root=data_dir, train=False, download=True, transform=img_to_float64)
 
-synthetic_true_x = torch.randn(8, dtype=torch.float64)
-synthetic_data_A = torch.randn(64, 8, dtype=torch.float64)
-synthetic_data_A *= torch.logspace(start=0, end=-8, steps=synthetic_data_A.size(1), base=2.0, dtype=torch.float64)
+synthetic_true_x = torch.randn(100, dtype=torch.float64)
+synthetic_data_A = torch.randn(20, 100, dtype=torch.float64)
+# synthetic_data_A *= torch.logspace(start=0, end=-synthetic_data_A.size(1), steps=synthetic_data_A.size(1), base=2.0,
+#                                    dtype=torch.float64)
 synthetic_data_b = torch.mv(synthetic_data_A, synthetic_true_x)
 synthetic_dataset = TensorDataset(synthetic_data_A, synthetic_data_b)
+
+synthetic_data_b_sigmoid = torch.sigmoid(synthetic_data_b).round()
+synthetic_dataset_sigmoid = TensorDataset(synthetic_data_A, synthetic_data_b_sigmoid)
 
 # Get dataset information
 fashion_img_length = fashion_training_data[0][0].shape[1]
@@ -75,3 +80,6 @@ def get_subset_examples(train_data, test_data, num_classes, num_train, num_test)
 fashion_training_subset, fashion_test_subset = get_subset_examples(fashion_training_data, fashion_test_data,
                                                                    num_fashion_classes, NUM_PER_CLASS_TRAIN_FASHION,
                                                                    NUM_PER_CLASS_TEST_FASHION)
+fashion_training_two_class, fashion_test_two_class = get_subset_examples(fashion_training_data, fashion_test_data, 2,
+                                                                         NUM_PER_CLASS_TRAIN_FASHION,
+                                                                         NUM_PER_CLASS_TEST_FASHION)

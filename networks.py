@@ -69,6 +69,18 @@ class LinearLeastSquares(nn.Module):
         return torch.mv(A, self.x)
 
 
+class BinaryClassifier(nn.Module):
+    """
+    Implements a binary classifier
+    """
+    def __init__(self, input_dim):
+        super().__init__()
+        self.x = nn.Parameter(torch.zeros(input_dim), requires_grad=True)
+
+    def forward(self, A):
+        return torch.sigmoid(torch.mv(A, self.x))
+
+
 class MultinomialLogisticRegression(nn.Module):
     """
     Implements multinomial logistic regression
@@ -81,14 +93,17 @@ class MultinomialLogisticRegression(nn.Module):
         :param num_classes: number of classes to consider
         """
         super().__init__()
+        self.num_classes = num_classes
         self.flatten = nn.Flatten()
-        self.hidden = nn.Linear(input_dim * input_dim, num_classes)
+        self.hidden = nn.Linear(input_dim * input_dim, self.num_classes)
         self.apply(_init_weights_zero)
+        self.log_softmax = nn.LogSoftmax(dim=1)
+        self.sigmoid = nn.Sigmoid()
 
     def forward(self, x):
         x = self.flatten(x)
         logits = self.hidden(x)
-        return logits  # no need for softmax - performed by cross-entropy loss
+        return self.log_softmax(logits) if self.num_classes > 1 else self.sigmoid(logits)
 
 
 class VAE(nn.Module):

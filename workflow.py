@@ -24,7 +24,8 @@ class Workflow:
 
     def __init__(self, training_set, test_set, num_epochs=int(1e6), grad_norm_tol=1e-8, lr=None, compare_invex=True,
                  invex_val=1e-1, compare_l2=False, l2_val=1e-2, compare_dropout=False, compare_batch_norm=False,
-                 compare_data_aug=False, reconstruction=False, least_sq=False, sgd=True, batch_size=64):
+                 compare_data_aug=False, reconstruction=False, least_sq=False, binary_log_reg=False,
+                 synthetic=False, sgd=True, batch_size=64):
         """
         Set up necessary constants and variables for all experiments.
 
@@ -42,6 +43,8 @@ class Workflow:
         :param compare_data_aug: True if comparing data augmentation, False otherwise
         :param reconstruction: True if performing reconstruction, False otherwise
         :param least_sq: True if performing least squares, False otherwise
+        :param binary_log_reg: True if performing binary logistic regression, False otherwise
+        :param synthetic: True if using synthetic data, False otherwise
         :param sgd: True if performing SGD, False if performing pure GD
         :param batch_size: Batch size (length of training dataset if sgd == False)
         """
@@ -65,6 +68,8 @@ class Workflow:
 
         self.reconstruction = reconstruction
         self.least_sq = least_sq
+        self.binary_log_reg = binary_log_reg
+        self.synthetic = synthetic
 
         # If learning rate is left unspecified, set to optimal (upper bound) learning rate (from MATH3204)
         if self.lr is None:
@@ -114,9 +119,13 @@ class Workflow:
             examples, targets = examples.to(device), targets.to(device)
             model.set_batch_idx(batch)
             prediction = model(examples)
+            if self.binary_log_reg:
+                targets = targets.unsqueeze(1).to(dtype=torch.float64)
+                prediction = torch.clamp(prediction, min=0.0, max=1.0)  # For numerical issues
             loss, objective = self.calculate_loss_and_objective(model, prediction, examples, targets, loss_fn)
             if not self.reconstruction and not self.least_sq:
-                correct += (prediction.argmax(1) == targets).type(torch.float).sum().item()
+                predicted = prediction.argmax(1) if not self.binary_log_reg else prediction.round()
+                correct += (predicted == targets).type(torch.float).sum().item()
 
             # Backpropagation
             optimizer.zero_grad()
@@ -164,7 +173,7 @@ class Workflow:
         print(f"Current grad (L_infinity) norm: {grad_norm:>8f}")
         if epoch in self.epochs_to_plot:
             self.grad_l_inf_norm_to_plot[self.plot_idx] = grad_norm
-            if self.least_sq:
+            if self.synthetic:
                 self.plot_idx += 1
         return grad_norm <= self.grad_norm_tol
 
@@ -177,11 +186,15 @@ class Workflow:
             for examples, targets in self.test_loader:
                 examples, targets = examples.to(device), targets.to(device)
                 prediction = model(examples)
+                if self.binary_log_reg:
+                    targets = targets.unsqueeze(1).to(dtype=torch.float64)
+                    prediction = torch.clamp(prediction, min=0.0, max=1.0)  # For numerical issues
                 loss, objective = self.calculate_loss_and_objective(model, prediction, examples, targets, loss_fn)
                 test_loss += loss.item()
                 test_objective += objective.item()
-                if not self.reconstruction:
-                    correct += (prediction.argmax(1) == targets).type(torch.float).sum().item()
+                if not self.reconstruction and not self.least_sq:
+                    predicted = prediction.argmax(1) if not self.binary_log_reg else prediction.round()
+                    correct += (predicted == targets).type(torch.float).sum().item()
         test_loss /= test_batches
         test_objective /= test_batches
         correct /= num_examples

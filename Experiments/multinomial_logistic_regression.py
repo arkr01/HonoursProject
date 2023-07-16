@@ -14,7 +14,8 @@ if __name__ == '__main__':
     experiment = Workflow(fashion_training_subset, fashion_test_subset, sgd=False)
 
     # Define model and loss function/optimiser
-    logistic_model = MultinomialLogisticRegression(input_dim=fashion_img_length, num_classes=num_fashion_classes)
+    logistic_model = MultinomialLogisticRegression(input_dim=fashion_img_length,
+                                                   num_classes=num_fashion_classes).to(dtype=torch.float64)
     logistic_model_name = f"{logistic_model=}".split('=')[0]  # Gives name of model variable!
     print(logistic_model)
 
@@ -22,8 +23,8 @@ if __name__ == '__main__':
     logistic_model.init_ps(train_dataloader=experiment.training_loader)
     logistic_model = logistic_model.to(device)
 
-    cross_entropy = nn.CrossEntropyLoss()
-    sgd = torch.optim.SGD(logistic_model.parameters(), lr=experiment.lr)  # , weight_decay=experiment.l2_param)
+    cross_entropy = nn.NLLLoss()
+    sgd = torch.optim.SGD(logistic_model.parameters(), lr=experiment.lr)
 
     print("\nUsing", device, "\n")
 
