@@ -72,10 +72,10 @@ both_params = torch.load(LOSS_METRICS_FOLDER + f'{model}/with_invex_l2_'
 with torch.no_grad():
     # Plot train/test losses for different models
     plt.figure()
-    plt.semilogy(epochs_to_plot, unreg_train_loss, 'k')
-    plt.semilogy(epochs_to_plot, invex_train_loss, 'r', ls='--')
-    plt.semilogy(epochs_to_plot, l2_train_loss, 'b', ls='-.')
-    plt.semilogy(epochs_to_plot, invex_l2_train_loss, 'y', ls=':')
+    plt.semilogy(epochs_to_plot, unreg_train_loss, 'k', ls=(0, (5, 1)))  # densely dashed
+    plt.semilogy(epochs_to_plot, invex_train_loss, 'r', ls=(0, (5, 5)))  # dashed
+    plt.semilogy(epochs_to_plot, l2_train_loss, 'b', ls=(0, (5, 10)))  # loosely dashed
+    plt.semilogy(epochs_to_plot, invex_l2_train_loss, 'y', ls=(0, (5, 15)))  # very loosely dashed
     plt.legend(['Unregularised', 'Invex', r'$\ell_2$', 'Both'])
     plt.xlabel('Epochs')
     plt.ylabel('Avg Train Loss')
@@ -84,10 +84,10 @@ with torch.no_grad():
     # plt.savefig(PLOTS_RESULTS_FOLDER + f'{model}/Train/Loss/{experiment_name}.eps')
 
     # plt.figure()
-    # plt.semilogy(epochs_to_plot, unreg_test_loss, 'k')
-    # plt.semilogy(epochs_to_plot, invex_test_loss, 'r', ls='--')
-    # plt.semilogy(epochs_to_plot, l2_test_loss, 'b', ls='-.')
-    # plt.semilogy(epochs_to_plot, invex_l2_test_loss, 'y', ls=':')
+    # plt.semilogy(epochs_to_plot, unreg_test_loss, 'k', ls=(0, (5, 1)))
+    # plt.semilogy(epochs_to_plot, invex_test_loss, 'r', ls=(0, (5, 5)))
+    # plt.semilogy(epochs_to_plot, l2_test_loss, 'b', ls=(0, (5, 10)))
+    # plt.semilogy(epochs_to_plot, invex_l2_test_loss, 'y', ls=(0, (5, 15)))
     # plt.legend(['Unregularised', 'Invex', r'$\ell_2$', 'Both'])
     # plt.xlabel('Epochs')
     # plt.ylabel('Avg Test Loss')
@@ -97,10 +97,10 @@ with torch.no_grad():
 
     # Plot train/test accuracies for different models
     plt.figure()
-    plt.semilogy(epochs_to_plot, unreg_train_obj, 'k')
-    plt.semilogy(epochs_to_plot, invex_train_obj, 'r', ls='--')
-    plt.semilogy(epochs_to_plot, l2_train_obj, 'b', ls='-.')
-    plt.semilogy(epochs_to_plot, invex_l2_train_obj, 'y', ls=':')
+    plt.semilogy(epochs_to_plot, unreg_train_obj, 'k', ls=(0, (1, 1)))  # densely dotted
+    plt.semilogy(epochs_to_plot, invex_train_obj, 'r', ls=(0, (1, 5)))  # dotted
+    plt.semilogy(epochs_to_plot, l2_train_obj, 'b', ls=(0, (1, 10)))  # loosely dotted
+    plt.semilogy(epochs_to_plot, invex_l2_train_obj, 'y', ls=(0, (1, 15)))  # very loosely dotted
     plt.legend(['Unregularised', 'Invex', r'$\ell_2$', 'Both'])
     plt.xlabel('Epochs')
     plt.ylabel('Avg Train Objective')
@@ -109,10 +109,10 @@ with torch.no_grad():
     # plt.savefig(PLOTS_RESULTS_FOLDER + f'{model}/Train/Objective/{experiment_name}.eps')
 
     # plt.figure()
-    # plt.semilogy(epochs_to_plot, unreg_test_obj, 'k')
-    # plt.semilogy(epochs_to_plot, invex_test_obj, 'r', ls='--')
-    # plt.semilogy(epochs_to_plot, l2_test_obj, 'b', ls='-.')
-    # plt.semilogy(epochs_to_plot, invex_l2_test_obj, 'y', ls=':')
+    # plt.semilogy(epochs_to_plot, unreg_test_obj, 'k', ls=(0, (1, 1))) 
+    # plt.semilogy(epochs_to_plot, invex_test_obj, 'r', ls=(0, (1, 5)))
+    # plt.semilogy(epochs_to_plot, l2_test_obj, 'b', ls=(0, (5, 10)))
+    # plt.semilogy(epochs_to_plot, invex_l2_test_obj, 'y', ls=(0, (1, 15)))
     # plt.legend(['Unregularised', 'Invex', r'$\ell_2$', 'Both'])
     # plt.xlabel('Epochs')
     # plt.ylabel('Avg Test Objective')
@@ -121,14 +121,14 @@ with torch.no_grad():
     # # plt.savefig(PLOTS_RESULTS_FOLDER + f'{model}/Test/Objective/{experiment_name}.eps')
 
     plt.figure()
-    plt.semilogy(epochs_to_plot, unreg_train_loss, 'k')
-    plt.semilogy(epochs_to_plot, unreg_train_obj, 'r', ls=(0, (3, 1, 1, 1)))  # dense dash dot
-    plt.semilogy(epochs_to_plot, invex_train_loss, 'b', ls='--')
-    plt.semilogy(epochs_to_plot, invex_train_obj, 'c', ls=(0, (3, 5, 1, 5, 1, 5)))  # dash dot dot
-    plt.semilogy(epochs_to_plot, l2_train_loss, 'm', ls=(0, (1, 1)))  # dense dot
-    plt.semilogy(epochs_to_plot, l2_train_obj, 'y', ls='-.')
-    plt.semilogy(epochs_to_plot, invex_l2_train_loss, 'y', ls=':')
-    plt.semilogy(epochs_to_plot, invex_l2_train_obj, 'y', ls=(0, (3, 1, 1, 1, 1, 1)))  # dense dash dot dot
+    plt.semilogy(epochs_to_plot, unreg_train_loss, 'k', ls=(0, (5, 1)))
+    plt.semilogy(epochs_to_plot, unreg_train_obj, 'k', ls=(0, (1, 1))) 
+    plt.semilogy(epochs_to_plot, invex_train_loss, 'r', ls=(0, (5, 5)))
+    plt.semilogy(epochs_to_plot, invex_train_obj, 'r', ls=(0, (1, 5)))
+    plt.semilogy(epochs_to_plot, l2_train_loss, 'b', ls=(0, (5, 10)))  # dense dot
+    plt.semilogy(epochs_to_plot, l2_train_obj, 'b', ls=(0, (1, 10)))
+    plt.semilogy(epochs_to_plot, invex_l2_train_loss, 'y', ls=(0, (5, 15)))
+    plt.semilogy(epochs_to_plot, invex_l2_train_obj, 'y', ls=(0, (1, 15)))
     plt.legend(['Unregularised L', 'Unregularised O', 'Invex L', 'Invex O', r'$\ell_2$ L', r'$\ell_2$ O', 'Both L',
                 'Both O'])
     plt.xlabel('Epochs')
@@ -138,14 +138,14 @@ with torch.no_grad():
     # plt.savefig(PLOTS_RESULTS_FOLDER + f'{model}/Train/Both/{experiment_name}.eps')
 
     # plt.figure()
-    # plt.semilogy(epochs_to_plot, unreg_test_loss, 'k')
-    # plt.semilogy(epochs_to_plot, unreg_test_obj, 'r', ls=(0, (3, 1, 1, 1)))  # dense dash dot
-    # plt.semilogy(epochs_to_plot, invex_test_loss, 'b', ls='--')
-    # plt.semilogy(epochs_to_plot, invex_test_obj, 'c', ls=(0, (3, 5, 1, 5, 1, 5)))  # dash dot dot
-    # plt.semilogy(epochs_to_plot, l2_test_loss, 'm', ls=(0, (1, 1)))  # dense dot
-    # plt.semilogy(epochs_to_plot, l2_test_obj, 'y', ls='-.')
-    # plt.semilogy(epochs_to_plot, invex_l2_test_loss, 'y', ls=':')
-    # plt.semilogy(epochs_to_plot, invex_l2_test_obj, 'y', ls=(0, (3, 1, 1, 1, 1, 1)))  # dense dash dot dot
+    # plt.semilogy(epochs_to_plot, unreg_test_loss, 'k', ls=(0, (5, 1)))
+    # plt.semilogy(epochs_to_plot, unreg_test_obj, 'k', ls=(0, (1, 1))) 
+    # plt.semilogy(epochs_to_plot, invex_test_loss, 'r', ls=(0, (5, 5)))
+    # plt.semilogy(epochs_to_plot, invex_test_obj, 'r', ls=(0, (1, 5)))
+    # plt.semilogy(epochs_to_plot, l2_test_loss, 'b', ls=(0, (5, 10)))
+    # plt.semilogy(epochs_to_plot, l2_test_obj, 'b', ls=(0, (1, 10)))
+    # plt.semilogy(epochs_to_plot, invex_l2_test_loss, 'y', ls=(0, (5, 15)))
+    # plt.semilogy(epochs_to_plot, invex_l2_test_obj, 'y', ls=(0, (1, 15)))
     # plt.legend(['Unregularised L', 'Unregularised O', 'Invex L', 'Invex O', r'$\ell_2$ L', r'$\ell_2$ O', 'Both L',
     #             'Both O'])
     # plt.xlabel('Epochs')
@@ -157,9 +157,9 @@ with torch.no_grad():
     # Plot L2 gradient norm convergence for different models
     plt.figure()
     plt.semilogy(epochs_to_plot, unreg_grad_norm, 'k')
-    plt.semilogy(epochs_to_plot, invex_grad_norm, 'r', ls='--')
-    plt.semilogy(epochs_to_plot, l2_grad_norm, 'b', ls='-.')
-    plt.semilogy(epochs_to_plot, invex_l2_grad_norm, 'y', ls=':')
+    plt.semilogy(epochs_to_plot, invex_grad_norm, 'r')
+    plt.semilogy(epochs_to_plot, l2_grad_norm, 'b')
+    plt.semilogy(epochs_to_plot, invex_l2_grad_norm, 'y')
     plt.legend(['Unregularised', 'Invex', r'$\ell_2$', 'Both'])
     plt.xlabel('Epochs')
     plt.ylabel(r'$\ell_\infty$ Gradient Norm')
