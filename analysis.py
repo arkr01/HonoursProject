@@ -14,68 +14,74 @@ matplotlib.rcParams["text.usetex"] = True  # Allows LaTeX in titles/labels/legen
 
 
 # What experiment we're plotting
-model = "least_squares_model_colrank"
-plot_title = "Linear Least Squares Regression"
-lr = 0.005
+model = "resnet50_model"
+plot_title = "ResNet50 Classification"
+lr = 0.01
 lambda_1 = 0.1
 lambda_2 = 0.01
 
-experiment_name = "gd_lrst_lambda0.1_l2lambda0.01_both_unreg_invex_l2"
+experiment_name = "sgd_lr0.01_lambda0.1_l2lambda0.01_both_unreg_invex_l2"
+standard_lr = experiment_name.__contains__("lrst")
+
+unreg_or_gd = "unregularised_" if experiment_name[0] == 's' and standard_lr else "with_"
+reg_or_gd = "" if experiment_name[0] == 's' else "gd_"
+lr_val = "" if standard_lr else f"lr{lr}_"
+config = reg_or_gd + lr_val
+unreg_config = unreg_or_gd + config
+
 if "wie" in LOSS_METRICS_FOLDER or "rgp" in LOSS_METRICS_FOLDER:
     experiment_name = "full_" + experiment_name
-unreg_or_gd = "unregularised_" if experiment_name[0] == 's' else "with_gd_"
-reg_or_gd = "" if experiment_name[0] == 's' else "gd_"
 
 epochs_to_plot = torch.load(LOSS_METRICS_FOLDER + f'{model}/epochs_to_plot.pth').to('cpu')
 
 # Train/Test Losses
-unreg_train_loss = torch.load(LOSS_METRICS_FOLDER + f'{model}/Train/{unreg_or_gd}loss.pth').to('cpu')
-unreg_test_loss = torch.load(LOSS_METRICS_FOLDER + f'{model}/Test/{unreg_or_gd}loss.pth').to('cpu')
-invex_train_loss = torch.load(LOSS_METRICS_FOLDER + f'{model}/Train/with_invex_{reg_or_gd}lambda0.1_loss.pth').to('cpu')
-invex_test_loss = torch.load(LOSS_METRICS_FOLDER + f'{model}/Test/with_invex_{reg_or_gd}lambda0.1_loss.pth').to('cpu')
-l2_train_loss = torch.load(LOSS_METRICS_FOLDER + f'{model}/Train/with_l2_{reg_or_gd}l2lambda0.01_loss.pth').to('cpu')
-l2_test_loss = torch.load(LOSS_METRICS_FOLDER + f'{model}/Test/with_l2_{reg_or_gd}l2lambda0.01_loss.pth').to('cpu')
+unreg_train_loss = torch.load(LOSS_METRICS_FOLDER + f'{model}/Train/{unreg_config}loss.pth').to('cpu')
+unreg_test_loss = torch.load(LOSS_METRICS_FOLDER + f'{model}/Test/{unreg_config}loss.pth').to('cpu')
+invex_train_loss = torch.load(LOSS_METRICS_FOLDER + f'{model}/Train/with_invex_{config}lambda0.1_loss.pth').to('cpu')
+invex_test_loss = torch.load(LOSS_METRICS_FOLDER + f'{model}/Test/with_invex_{config}lambda0.1_loss.pth').to('cpu')
+l2_train_loss = torch.load(LOSS_METRICS_FOLDER + f'{model}/Train/with_l2_{config}l2lambda0.01_loss.pth').to('cpu')
+l2_test_loss = torch.load(LOSS_METRICS_FOLDER + f'{model}/Test/with_l2_{config}l2lambda0.01_loss.pth').to('cpu')
 invex_l2_train_loss = torch.load(LOSS_METRICS_FOLDER + f'{model}/Train/with_invex_l2'
-                                                       f'_{reg_or_gd}lambda0.1_l2lambda0.01_loss.pth').to('cpu')
+                                                       f'_{config}lambda0.1_l2lambda0.01_loss.pth').to('cpu')
 invex_l2_test_loss = torch.load(LOSS_METRICS_FOLDER + f'{model}/Test/with_invex_l2'
-                                                      f'_{reg_or_gd}lambda0.1_l2lambda0.01_loss.pth').to('cpu')
+                                                      f'_{config}lambda0.1_l2lambda0.01_loss.pth').to('cpu')
 
 # Train/Test Objectives
-unreg_train_obj = torch.load(LOSS_METRICS_FOLDER + f'{model}/Train/{unreg_or_gd}objective.pth').to('cpu')
-unreg_test_obj = torch.load(LOSS_METRICS_FOLDER + f'{model}/Test/{unreg_or_gd}objective.pth').to('cpu')
+unreg_train_obj = torch.load(LOSS_METRICS_FOLDER + f'{model}/Train/{unreg_config}objective.pth').to('cpu')
+unreg_test_obj = torch.load(LOSS_METRICS_FOLDER + f'{model}/Test/{unreg_config}objective.pth').to('cpu')
 invex_train_obj = torch.load(LOSS_METRICS_FOLDER + f'{model}/Train/with_invex'
-                                                   f'_{reg_or_gd}lambda0.1_objective.pth').to('cpu')
-invex_test_obj = torch.load(LOSS_METRICS_FOLDER + f'{model}/Test/with_invex_{reg_or_gd}lambda0.1_objective.pth').to(
+                                                   f'_{config}lambda0.1_objective.pth').to('cpu')
+invex_test_obj = torch.load(LOSS_METRICS_FOLDER + f'{model}/Test/with_invex_{config}lambda0.1_objective.pth').to(
     'cpu')
-l2_train_obj = torch.load(LOSS_METRICS_FOLDER + f'{model}/Train/with_l2_{reg_or_gd}l2lambda0.01_objective.pth').to(
+l2_train_obj = torch.load(LOSS_METRICS_FOLDER + f'{model}/Train/with_l2_{config}l2lambda0.01_objective.pth').to(
     'cpu')
-l2_test_obj = torch.load(LOSS_METRICS_FOLDER + f'{model}/Test/with_l2_{reg_or_gd}l2lambda0.01_objective.pth').to('cpu')
+l2_test_obj = torch.load(LOSS_METRICS_FOLDER + f'{model}/Test/with_l2_{config}l2lambda0.01_objective.pth').to('cpu')
 invex_l2_train_obj = torch.load(LOSS_METRICS_FOLDER + f'{model}/Train/with_invex_l2'
-                                                      f'_{reg_or_gd}lambda0.1_l2lambda0.01_objective.pth').to('cpu')
+                                                      f'_{config}lambda0.1_l2lambda0.01_objective.pth').to('cpu')
 invex_l2_test_obj = torch.load(LOSS_METRICS_FOLDER + f'{model}/Test/with_invex_l2'
-                                                     f'_{reg_or_gd}lambda0.1_l2lambda0.01_objective.pth').to('cpu')
+                                                     f'_{config}lambda0.1_l2lambda0.01_objective.pth').to('cpu')
 
 # L2 Gradient Norms
-unreg_grad_norm = torch.load(LOSS_METRICS_FOLDER + f'{model}/{unreg_or_gd}grad_norm.pth').to('cpu')
-invex_grad_norm = torch.load(LOSS_METRICS_FOLDER + f'{model}/with_invex_{reg_or_gd}lambda0.1_grad_norm.pth').to('cpu')
-l2_grad_norm = torch.load(LOSS_METRICS_FOLDER + f'{model}/with_l2_{reg_or_gd}l2lambda0.01_grad_norm.pth').to('cpu')
+unreg_grad_norm = torch.load(LOSS_METRICS_FOLDER + f'{model}/{unreg_config}grad_norm.pth').to('cpu')
+invex_grad_norm = torch.load(LOSS_METRICS_FOLDER + f'{model}/with_invex_{config}lambda0.1_grad_norm.pth').to('cpu')
+l2_grad_norm = torch.load(LOSS_METRICS_FOLDER + f'{model}/with_l2_{config}l2lambda0.01_grad_norm.pth').to('cpu')
 invex_l2_grad_norm = torch.load(LOSS_METRICS_FOLDER + f'{model}/with_invex_l2'
-                                                      f'_{reg_or_gd}lambda0.1_l2lambda0.01_grad_norm.pth').to('cpu')
+                                                      f'_{config}lambda0.1_l2lambda0.01_grad_norm.pth').to('cpu')
 
 # Model parameters (without p variables)
-unregularised_params = torch.load(LOSS_METRICS_FOLDER + f'{model}/{unreg_or_gd}parameters.pth')
-invex_params = torch.load(LOSS_METRICS_FOLDER + f'{model}/with_invex_{reg_or_gd}lambda0.1_parameters.pth')
-l2_params = torch.load(LOSS_METRICS_FOLDER + f'{model}/with_l2_{reg_or_gd}l2lambda0.01_parameters.pth')
+unregularised_params = torch.load(LOSS_METRICS_FOLDER + f'{model}/{unreg_config}parameters.pth')
+invex_params = torch.load(LOSS_METRICS_FOLDER + f'{model}/with_invex_{config}lambda0.1_parameters.pth')
+l2_params = torch.load(LOSS_METRICS_FOLDER + f'{model}/with_l2_{config}l2lambda0.01_parameters.pth')
 both_params = torch.load(LOSS_METRICS_FOLDER + f'{model}/with_invex_l2_'
-                                               f'{reg_or_gd}lambda0.1_l2lambda0.01_parameters.pth')
+                                               f'{config}lambda0.1_l2lambda0.01_parameters.pth')
 
 with torch.no_grad():
     # Plot train/test losses for different models
     plt.figure()
-    plt.semilogy(epochs_to_plot, unreg_train_loss, 'k', ls=(0, (5, 1)))  # densely dashed
-    plt.semilogy(epochs_to_plot, invex_train_loss, 'r', ls=(0, (5, 5)))  # dashed
-    plt.semilogy(epochs_to_plot, l2_train_loss, 'b', ls=(0, (5, 10)))  # loosely dashed
-    plt.semilogy(epochs_to_plot, invex_l2_train_loss, 'y', ls=(0, (5, 15)))  # very loosely dashed
+    plt.plot(epochs_to_plot, unreg_train_loss, 'k', ls=(0, (5, 1)))  # densely dashed
+    plt.plot(epochs_to_plot, invex_train_loss, 'r', ls=(0, (5, 5)))  # dashed
+    plt.plot(epochs_to_plot, l2_train_loss, 'b', ls=(0, (5, 10)))  # loosely dashed
+    plt.plot(epochs_to_plot, invex_l2_train_loss, 'y', ls=(0, (5, 15)))  # very loosely dashed
     plt.legend(['Unregularised', 'Invex', r'$\ell_2$', 'Both'])
     plt.xlabel('Epochs')
     plt.ylabel('Avg Train Loss')
@@ -83,83 +89,83 @@ with torch.no_grad():
     plt.savefig(PLOTS_RESULTS_FOLDER + f'{model}/Train/Loss/{experiment_name}.jpg')
     # plt.savefig(PLOTS_RESULTS_FOLDER + f'{model}/Train/Loss/{experiment_name}.eps')
 
-    # plt.figure()
-    # plt.semilogy(epochs_to_plot, unreg_test_loss, 'k', ls=(0, (5, 1)))
-    # plt.semilogy(epochs_to_plot, invex_test_loss, 'r', ls=(0, (5, 5)))
-    # plt.semilogy(epochs_to_plot, l2_test_loss, 'b', ls=(0, (5, 10)))
-    # plt.semilogy(epochs_to_plot, invex_l2_test_loss, 'y', ls=(0, (5, 15)))
-    # plt.legend(['Unregularised', 'Invex', r'$\ell_2$', 'Both'])
-    # plt.xlabel('Epochs')
-    # plt.ylabel('Avg Test Loss')
-    # plt.title(rf'{plot_title} (lr$\approx{lr}$, $\lambda_1={lambda_1}$, $\lambda_2={lambda_2}$)')
-    # plt.savefig(PLOTS_RESULTS_FOLDER + f'{model}/Test/Loss/{experiment_name}.jpg')
-    # # plt.savefig(PLOTS_RESULTS_FOLDER + f'{model}/Test/Loss/{experiment_name}.eps')
-
-    # Plot train/test accuracies for different models
     plt.figure()
-    plt.semilogy(epochs_to_plot, unreg_train_obj, 'k', ls=(0, (1, 1)))  # densely dotted
-    plt.semilogy(epochs_to_plot, invex_train_obj, 'r', ls=(0, (1, 5)))  # dotted
-    plt.semilogy(epochs_to_plot, l2_train_obj, 'b', ls=(0, (1, 10)))  # loosely dotted
-    plt.semilogy(epochs_to_plot, invex_l2_train_obj, 'y', ls=(0, (1, 15)))  # very loosely dotted
+    plt.plot(epochs_to_plot, unreg_test_loss, 'k', ls=(0, (5, 1)))
+    plt.plot(epochs_to_plot, invex_test_loss, 'r', ls=(0, (5, 5)))
+    plt.plot(epochs_to_plot, l2_test_loss, 'b', ls=(0, (5, 10)))
+    plt.plot(epochs_to_plot, invex_l2_test_loss, 'y', ls=(0, (5, 15)))
     plt.legend(['Unregularised', 'Invex', r'$\ell_2$', 'Both'])
     plt.xlabel('Epochs')
-    plt.ylabel('Avg Train Objective')
+    plt.ylabel('Avg Test Loss')
     plt.title(rf'{plot_title} (lr$\approx{lr}$, $\lambda_1={lambda_1}$, $\lambda_2={lambda_2}$)')
-    plt.savefig(PLOTS_RESULTS_FOLDER + f'{model}/Train/Objective/{experiment_name}.jpg')
-    # plt.savefig(PLOTS_RESULTS_FOLDER + f'{model}/Train/Objective/{experiment_name}.eps')
+    plt.savefig(PLOTS_RESULTS_FOLDER + f'{model}/Test/Loss/{experiment_name}.jpg')
+    # # plt.savefig(PLOTS_RESULTS_FOLDER + f'{model}/Test/Loss/{experiment_name}.eps')
 
+    # Plot train/test objectives for different models
     # plt.figure()
-    # plt.semilogy(epochs_to_plot, unreg_test_obj, 'k', ls=(0, (1, 1))) 
-    # plt.semilogy(epochs_to_plot, invex_test_obj, 'r', ls=(0, (1, 5)))
-    # plt.semilogy(epochs_to_plot, l2_test_obj, 'b', ls=(0, (5, 10)))
-    # plt.semilogy(epochs_to_plot, invex_l2_test_obj, 'y', ls=(0, (1, 15)))
+    # plt.plot(epochs_to_plot, unreg_train_obj, 'k', ls=(0, (1, 1)))  # densely dotted
+    # plt.plot(epochs_to_plot, invex_train_obj, 'r', ls=(0, (1, 5)))  # dotted
+    # plt.plot(epochs_to_plot, l2_train_obj, 'b', ls=(0, (1, 10)))  # loosely dotted
+    # plt.plot(epochs_to_plot, invex_l2_train_obj, 'y', ls=(0, (1, 15)))  # very loosely dotted
+    # plt.legend(['Unregularised', 'Invex', r'$\ell_2$', 'Both'])
+    # plt.xlabel('Epochs')
+    # plt.ylabel('Avg Train Objective')
+    # plt.title(rf'{plot_title} (lr$\approx{lr}$, $\lambda_1={lambda_1}$, $\lambda_2={lambda_2}$)')
+    # plt.savefig(PLOTS_RESULTS_FOLDER + f'{model}/Train/Objective/{experiment_name}.jpg')
+    # # plt.savefig(PLOTS_RESULTS_FOLDER + f'{model}/Train/Objective/{experiment_name}.eps')
+    #
+    # plt.figure()
+    # plt.plot(epochs_to_plot, unreg_test_obj, 'k', ls=(0, (1, 1)))
+    # plt.plot(epochs_to_plot, invex_test_obj, 'r', ls=(0, (1, 5)))
+    # plt.plot(epochs_to_plot, l2_test_obj, 'b', ls=(0, (5, 10)))
+    # plt.plot(epochs_to_plot, invex_l2_test_obj, 'y', ls=(0, (1, 15)))
     # plt.legend(['Unregularised', 'Invex', r'$\ell_2$', 'Both'])
     # plt.xlabel('Epochs')
     # plt.ylabel('Avg Test Objective')
     # plt.title(rf'{plot_title} (lr$\approx{lr}$, $\lambda_1={lambda_1}$, $\lambda_2={lambda_2}$)')
     # plt.savefig(PLOTS_RESULTS_FOLDER + f'{model}/Test/Objective/{experiment_name}.jpg')
-    # # plt.savefig(PLOTS_RESULTS_FOLDER + f'{model}/Test/Objective/{experiment_name}.eps')
-
-    plt.figure()
-    plt.semilogy(epochs_to_plot, unreg_train_loss, 'k', ls=(0, (5, 1)))
-    plt.semilogy(epochs_to_plot, unreg_train_obj, 'k', ls=(0, (1, 1))) 
-    plt.semilogy(epochs_to_plot, invex_train_loss, 'r', ls=(0, (5, 5)))
-    plt.semilogy(epochs_to_plot, invex_train_obj, 'r', ls=(0, (1, 5)))
-    plt.semilogy(epochs_to_plot, l2_train_loss, 'b', ls=(0, (5, 10)))  # dense dot
-    plt.semilogy(epochs_to_plot, l2_train_obj, 'b', ls=(0, (1, 10)))
-    plt.semilogy(epochs_to_plot, invex_l2_train_loss, 'y', ls=(0, (5, 15)))
-    plt.semilogy(epochs_to_plot, invex_l2_train_obj, 'y', ls=(0, (1, 15)))
-    plt.legend(['Unregularised L', 'Unregularised O', 'Invex L', 'Invex O', r'$\ell_2$ L', r'$\ell_2$ O', 'Both L',
-                'Both O'])
-    plt.xlabel('Epochs')
-    plt.ylabel('Avg Train')
-    plt.title(rf'{plot_title} (lr$\approx{lr}$, $\lambda_1={lambda_1}$, $\lambda_2={lambda_2}$)')
-    plt.savefig(PLOTS_RESULTS_FOLDER + f'{model}/Train/Both/{experiment_name}.jpg')
-    # plt.savefig(PLOTS_RESULTS_FOLDER + f'{model}/Train/Both/{experiment_name}.eps')
-
+    # # # plt.savefig(PLOTS_RESULTS_FOLDER + f'{model}/Test/Objective/{experiment_name}.eps')
+    #
     # plt.figure()
-    # plt.semilogy(epochs_to_plot, unreg_test_loss, 'k', ls=(0, (5, 1)))
-    # plt.semilogy(epochs_to_plot, unreg_test_obj, 'k', ls=(0, (1, 1))) 
-    # plt.semilogy(epochs_to_plot, invex_test_loss, 'r', ls=(0, (5, 5)))
-    # plt.semilogy(epochs_to_plot, invex_test_obj, 'r', ls=(0, (1, 5)))
-    # plt.semilogy(epochs_to_plot, l2_test_loss, 'b', ls=(0, (5, 10)))
-    # plt.semilogy(epochs_to_plot, l2_test_obj, 'b', ls=(0, (1, 10)))
-    # plt.semilogy(epochs_to_plot, invex_l2_test_loss, 'y', ls=(0, (5, 15)))
-    # plt.semilogy(epochs_to_plot, invex_l2_test_obj, 'y', ls=(0, (1, 15)))
+    # plt.plot(epochs_to_plot, unreg_train_loss, 'k', ls=(0, (5, 1)))
+    # plt.plot(epochs_to_plot, unreg_train_obj, 'k', ls=(0, (1, 1)))
+    # plt.plot(epochs_to_plot, invex_train_loss, 'r', ls=(0, (5, 5)))
+    # plt.plot(epochs_to_plot, invex_train_obj, 'r', ls=(0, (1, 5)))
+    # plt.plot(epochs_to_plot, l2_train_loss, 'b', ls=(0, (5, 10)))  # dense dot
+    # plt.plot(epochs_to_plot, l2_train_obj, 'b', ls=(0, (1, 10)))
+    # plt.plot(epochs_to_plot, invex_l2_train_loss, 'y', ls=(0, (5, 15)))
+    # plt.plot(epochs_to_plot, invex_l2_train_obj, 'y', ls=(0, (1, 15)))
+    # plt.legend(['Unregularised L', 'Unregularised O', 'Invex L', 'Invex O', r'$\ell_2$ L', r'$\ell_2$ O', 'Both L',
+    #             'Both O'])
+    # plt.xlabel('Epochs')
+    # plt.ylabel('Avg Train')
+    # plt.title(rf'{plot_title} (lr$\approx{lr}$, $\lambda_1={lambda_1}$, $\lambda_2={lambda_2}$)')
+    # plt.savefig(PLOTS_RESULTS_FOLDER + f'{model}/Train/Both/{experiment_name}.jpg')
+    # # plt.savefig(PLOTS_RESULTS_FOLDER + f'{model}/Train/Both/{experiment_name}.eps')
+    #
+    # plt.figure()
+    # plt.plot(epochs_to_plot, unreg_test_loss, 'k', ls=(0, (5, 1)))
+    # plt.plot(epochs_to_plot, unreg_test_obj, 'k', ls=(0, (1, 1)))
+    # plt.plot(epochs_to_plot, invex_test_loss, 'r', ls=(0, (5, 5)))
+    # plt.plot(epochs_to_plot, invex_test_obj, 'r', ls=(0, (1, 5)))
+    # plt.plot(epochs_to_plot, l2_test_loss, 'b', ls=(0, (5, 10)))
+    # plt.plot(epochs_to_plot, l2_test_obj, 'b', ls=(0, (1, 10)))
+    # plt.plot(epochs_to_plot, invex_l2_test_loss, 'y', ls=(0, (5, 15)))
+    # plt.plot(epochs_to_plot, invex_l2_test_obj, 'y', ls=(0, (1, 15)))
     # plt.legend(['Unregularised L', 'Unregularised O', 'Invex L', 'Invex O', r'$\ell_2$ L', r'$\ell_2$ O', 'Both L',
     #             'Both O'])
     # plt.xlabel('Epochs')
     # plt.ylabel('Avg Test')
     # plt.title(rf'{plot_title} (lr$\approx{lr}$, $\lambda_1={lambda_1}$, $\lambda_2={lambda_2}$)')
     # plt.savefig(PLOTS_RESULTS_FOLDER + f'{model}/Test/Both/{experiment_name}.jpg')
-    # # plt.savefig(PLOTS_RESULTS_FOLDER + f'{model}/Test/Both/{experiment_name}.eps')
+    # # # plt.savefig(PLOTS_RESULTS_FOLDER + f'{model}/Test/Both/{experiment_name}.eps')
 
     # Plot L2 gradient norm convergence for different models
     plt.figure()
-    plt.semilogy(epochs_to_plot, unreg_grad_norm, 'k')
-    plt.semilogy(epochs_to_plot, invex_grad_norm, 'r')
-    plt.semilogy(epochs_to_plot, l2_grad_norm, 'b')
-    plt.semilogy(epochs_to_plot, invex_l2_grad_norm, 'y')
+    plt.plot(epochs_to_plot, unreg_grad_norm, 'k')
+    plt.plot(epochs_to_plot, invex_grad_norm, 'r')
+    plt.plot(epochs_to_plot, l2_grad_norm, 'b')
+    plt.plot(epochs_to_plot, invex_l2_grad_norm, 'y')
     plt.legend(['Unregularised', 'Invex', r'$\ell_2$', 'Both'])
     plt.xlabel('Epochs')
     plt.ylabel(r'$\ell_\infty$ Gradient Norm')

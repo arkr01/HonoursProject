@@ -42,7 +42,7 @@ class Workflow:
         :param compare_batch_norm: True if comparing batch normalisation, False otherwise
         :param compare_data_aug: True if comparing data augmentation, False otherwise
         :param reconstruction: True if performing reconstruction, False otherwise
-        :param least_sq: True if performing least squares, False otherwise
+        :param least_sq: True if performing linear least squares regression, False otherwise
         :param binary_log_reg: True if performing binary logistic regression, False otherwise
         :param synthetic: True if using synthetic data, False otherwise
         :param sgd: True if performing SGD, False if performing pure GD

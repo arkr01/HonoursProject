@@ -11,10 +11,10 @@ from networks import *
 
 if __name__ == '__main__':
     # Set up data loaders, set hyperparameters, etc.
-    experiment = Workflow(cifar10_training_data, cifar10_test_data, num_epochs=10, reconstruction=True)
+    experiment = Workflow(cifar10_training_subset, cifar10_test_subset, sgd=False, reconstruction=True)
 
     # Define model and loss function/optimiser
-    vae_model = VAE(input_dim=cifar_img_shape[1], num_input_channels=cifar_img_shape[0])
+    vae_model = VAE(input_dim=cifar_img_shape[1], num_input_channels=cifar_img_shape[0]).to(dtype=torch.float64)
     vae_model_name = f"{vae_model=}".split('=')[0]  # Gives name of model variable!
     print(vae_model)
 

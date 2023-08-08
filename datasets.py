@@ -65,6 +65,9 @@ def get_subset_examples(train_data, test_data, num_classes, num_train, num_test)
     """
     train_subset_idx = torch.zeros(0, dtype=torch.long)
     test_subset_idx = torch.zeros_like(train_subset_idx)
+    if not torch.is_tensor(train_data.targets):
+        train_data.targets = torch.tensor(train_data.targets)
+        test_data.targets = torch.tensor(test_data.targets)
     for class_num in range(num_classes):
         train_idx_to_add = (train_data.targets == class_num).nonzero().flatten()[:num_train]
         test_idx_to_add = (test_data.targets == class_num).nonzero().flatten()[:num_test]
@@ -82,3 +85,6 @@ fashion_training_subset, fashion_test_subset = get_subset_examples(fashion_train
 fashion_training_two_class, fashion_test_two_class = get_subset_examples(fashion_training_data, fashion_test_data, 2,
                                                                          NUM_PER_CLASS_TRAIN_FASHION,
                                                                          NUM_PER_CLASS_TEST_FASHION)
+cifar10_training_subset, cifar10_test_subset = get_subset_examples(cifar10_training_data, cifar10_test_data, 10,
+                                                                   NUM_PER_CLASS_TRAIN_FASHION,
+                                                                   NUM_PER_CLASS_TEST_FASHION)
