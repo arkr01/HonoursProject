@@ -49,8 +49,8 @@ class ModuleWrapper(nn.Module):
                 x = tuple(updated_x)
             else:
                 x = x + self.lamda * self.ps[self.batch_idx]
-                if self.log_out:
-                    x = torch.log(x)
+        if self.log_out:
+            x = torch.log(x)
         return x
 
 

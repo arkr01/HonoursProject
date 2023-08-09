@@ -16,11 +16,11 @@ matplotlib.rcParams["text.usetex"] = True  # Allows LaTeX in titles/labels/legen
 # What experiment we're plotting
 model = "resnet50_model"
 plot_title = "ResNet50 Classification"
-lr = 0.01
+lr = 0.1
 lambda_1 = 0.1
 lambda_2 = 0.01
 
-experiment_name = "sgd_lr0.01_lambda0.1_l2lambda0.01_both_unreg_invex_l2"
+experiment_name = "sgd_lr0.1_lambda0.1_l2lambda0.01_both_unreg_invex_l2"
 standard_lr = experiment_name.__contains__("lrst")
 
 unreg_or_gd = "unregularised_" if experiment_name[0] == 's' and standard_lr else "with_"
@@ -47,19 +47,19 @@ invex_l2_test_loss = torch.load(LOSS_METRICS_FOLDER + f'{model}/Test/with_invex_
                                                       f'_{config}lambda0.1_l2lambda0.01_loss.pth').to('cpu')
 
 # Train/Test Objectives
-unreg_train_obj = torch.load(LOSS_METRICS_FOLDER + f'{model}/Train/{unreg_config}objective.pth').to('cpu')
-unreg_test_obj = torch.load(LOSS_METRICS_FOLDER + f'{model}/Test/{unreg_config}objective.pth').to('cpu')
-invex_train_obj = torch.load(LOSS_METRICS_FOLDER + f'{model}/Train/with_invex'
-                                                   f'_{config}lambda0.1_objective.pth').to('cpu')
-invex_test_obj = torch.load(LOSS_METRICS_FOLDER + f'{model}/Test/with_invex_{config}lambda0.1_objective.pth').to(
-    'cpu')
-l2_train_obj = torch.load(LOSS_METRICS_FOLDER + f'{model}/Train/with_l2_{config}l2lambda0.01_objective.pth').to(
-    'cpu')
-l2_test_obj = torch.load(LOSS_METRICS_FOLDER + f'{model}/Test/with_l2_{config}l2lambda0.01_objective.pth').to('cpu')
-invex_l2_train_obj = torch.load(LOSS_METRICS_FOLDER + f'{model}/Train/with_invex_l2'
-                                                      f'_{config}lambda0.1_l2lambda0.01_objective.pth').to('cpu')
-invex_l2_test_obj = torch.load(LOSS_METRICS_FOLDER + f'{model}/Test/with_invex_l2'
-                                                     f'_{config}lambda0.1_l2lambda0.01_objective.pth').to('cpu')
+# unreg_train_obj = torch.load(LOSS_METRICS_FOLDER + f'{model}/Train/{unreg_config}objective.pth').to('cpu')
+# unreg_test_obj = torch.load(LOSS_METRICS_FOLDER + f'{model}/Test/{unreg_config}objective.pth').to('cpu')
+# invex_train_obj = torch.load(LOSS_METRICS_FOLDER + f'{model}/Train/with_invex'
+#                                                    f'_{config}lambda0.1_objective.pth').to('cpu')
+# invex_test_obj = torch.load(LOSS_METRICS_FOLDER + f'{model}/Test/with_invex_{config}lambda0.1_objective.pth').to(
+#     'cpu')
+# l2_train_obj = torch.load(LOSS_METRICS_FOLDER + f'{model}/Train/with_l2_{config}l2lambda0.01_objective.pth').to(
+#     'cpu')
+# l2_test_obj = torch.load(LOSS_METRICS_FOLDER + f'{model}/Test/with_l2_{config}l2lambda0.01_objective.pth').to('cpu')
+# invex_l2_train_obj = torch.load(LOSS_METRICS_FOLDER + f'{model}/Train/with_invex_l2'
+#                                                       f'_{config}lambda0.1_l2lambda0.01_objective.pth').to('cpu')
+# invex_l2_test_obj = torch.load(LOSS_METRICS_FOLDER + f'{model}/Test/with_invex_l2'
+#                                                      f'_{config}lambda0.1_l2lambda0.01_objective.pth').to('cpu')
 
 # L2 Gradient Norms
 unreg_grad_norm = torch.load(LOSS_METRICS_FOLDER + f'{model}/{unreg_config}grad_norm.pth').to('cpu')
@@ -162,10 +162,10 @@ with torch.no_grad():
 
     # Plot L2 gradient norm convergence for different models
     plt.figure()
-    plt.plot(epochs_to_plot, unreg_grad_norm, 'k')
-    plt.plot(epochs_to_plot, invex_grad_norm, 'r')
-    plt.plot(epochs_to_plot, l2_grad_norm, 'b')
-    plt.plot(epochs_to_plot, invex_l2_grad_norm, 'y')
+    plt.semilogy(epochs_to_plot, unreg_grad_norm, 'k')
+    plt.semilogy(epochs_to_plot, invex_grad_norm, 'r')
+    plt.semilogy(epochs_to_plot, l2_grad_norm, 'b')
+    plt.semilogy(epochs_to_plot, invex_l2_grad_norm, 'y')
     plt.legend(['Unregularised', 'Invex', r'$\ell_2$', 'Both'])
     plt.xlabel('Epochs')
     plt.ylabel(r'$\ell_\infty$ Gradient Norm')
