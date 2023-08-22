@@ -26,8 +26,9 @@ class Workflow:
 
     def __init__(self, training_set, test_set, num_epochs=int(1e6), grad_norm_tol=1e-8, lr=None, compare_invex=False,
                  invex_val=1e-1, invex_p_ones=False, compare_l2=False, l2_val=1e-2, compare_dropout=False,
-                 dropout_val=0.5, compare_batch_norm=False, compare_data_aug=False, img_length=-1, reconstruction=False,
-                 least_sq=False, binary_log_reg=False, synthetic=False, sgd=True, batch_size=64):
+                 dropout_val=0.5, compare_batch_norm=False, compare_data_aug=False, img_length=-1,
+                 subset=False, reconstruction=False, least_sq=False, binary_log_reg=False, synthetic=False, sgd=True,
+                 batch_size=64):
         """
         Set up necessary constants and variables for all experiments.
 
@@ -46,6 +47,7 @@ class Workflow:
         :param compare_batch_norm: True if comparing batch normalisation, False otherwise
         :param compare_data_aug: True if comparing data augmentation, False otherwise
         :param img_length: Length of single image from dataset (for data augmentation)
+        :param subset: True if using Subset class for dataset, False otherwise (for data augmentation)
         :param reconstruction: True if performing reconstruction, False otherwise
         :param least_sq: True if performing linear least squares regression, False otherwise
         :param binary_log_reg: True if performing binary logistic regression, False otherwise
@@ -117,7 +119,10 @@ class Workflow:
             augmentations = Compose([RandomHorizontalFlip(), RandomVerticalFlip(), RandomRotation(45),
                                      RandomCrop(img_length / 2), RandomGrayscale(), RandomInvert(), ToTensor(),
                                      ConvertImageDtype(torch.float64)])
-            training_set.dataset.transform = augmentations
+            if subset:
+                training_set.dataset.transform = augmentations
+            else:
+                training_set.transform = augmentations
 
         self.training_loader = DataLoader(training_set, batch_size=self.batch_size)
         self.test_loader = DataLoader(test_set, batch_size=self.batch_size)
