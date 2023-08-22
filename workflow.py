@@ -24,7 +24,7 @@ device = "cuda" if torch.cuda.is_available() else "cpu"
 class Workflow:
     """ Set up general workflow for hyperparameters, configuration constants, training, testing, and saving. """
 
-    def __init__(self, training_set, test_set, num_epochs=int(1e6), grad_norm_tol=1e-8, lr=None, compare_invex=True,
+    def __init__(self, training_set, test_set, num_epochs=int(1e6), grad_norm_tol=1e-8, lr=None, compare_invex=False,
                  invex_val=1e-1, invex_p_ones=False, compare_l2=False, l2_val=1e-2, compare_dropout=False,
                  dropout_val=0.5, compare_batch_norm=False, compare_data_aug=False, img_length=-1, reconstruction=False,
                  least_sq=False, binary_log_reg=False, synthetic=False, sgd=True, batch_size=64):
