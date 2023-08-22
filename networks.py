@@ -13,16 +13,18 @@ class ModuleWrapper(nn.Module):
     https://github.com/RixonC/invexifying-regularization
     It appears primarily in its original form, barring a small modification in the constructor to initialise self.ps to
     None, as well as generalisations to handle NN architectures with multiple outputs, and those requiring
-    logarithmic output.
+    logarithmic output. Generalisations have also been made to consider a scalar variable p multiplied by a vector of
+    ones.
 
     This acts as a wrapper for any model to perform invex regularisation (https://arxiv.org/abs/2111.11027v1)
     """
-    def __init__(self, module, lamda=0.0, multi_output=False, log_out=False):
+    def __init__(self, module, lamda=0.0, p_ones=False, multi_output=False, log_out=False):
         super().__init__()
         self.module = module
         self.lamda = lamda
         self.batch_idx = 0
         self.ps = None
+        self.p_ones = p_ones
         self.multi_output = multi_output
         self.log_out = log_out
 
@@ -31,8 +33,11 @@ class ModuleWrapper(nn.Module):
             self.module.eval()
             ps = []
             for inputs, targets in iter(train_dataloader):
-                outputs = self.module(inputs)
-                p = torch.zeros_like(outputs[0] if self.multi_output else outputs)
+                if self.p_ones:
+                    p = 0.0
+                else:
+                    outputs = self.module(inputs)
+                    p = torch.zeros_like(outputs[0] if self.multi_output else outputs)
                 ps.append(torch.nn.Parameter(p, requires_grad=True))
             self.ps = torch.nn.ParameterList(ps)
             self.module.train()
@@ -45,10 +50,10 @@ class ModuleWrapper(nn.Module):
         if self.lamda != 0.0 and self.training:
             if self.multi_output:
                 updated_x = list(x)
-                updated_x[0] = updated_x[0] + self.lamda * self.ps[self.batch_idx]
+                updated_x[0] = updated_x[0] + self.lamda * torch.mul(self.ps[self.batch_idx], torch.ones_like(x[0]))
                 x = tuple(updated_x)
             else:
-                x = x + self.lamda * self.ps[self.batch_idx]
+                x = x + self.lamda * torch.mul(self.ps[self.batch_idx], torch.ones_like(x))
         if self.log_out:
             x = torch.log(x)
         return x
@@ -175,18 +180,29 @@ class VAE(nn.Module):
 
 
 class ConvBlock(nn.Module):
-    def __init__(self, input_channels, output_channels, kernel, stride, padding):
+    """
+    Convolutional Block as part of ResNet50.
+    """
+    def __init__(self, input_channels, output_channels, kernel, stride, padding, compare_batch_norm):
         super().__init__()
         self.conv = nn.Conv2d(in_channels=input_channels, out_channels=output_channels, kernel_size=kernel,
                               stride=stride, padding=padding)
-        self.bn = nn.BatchNorm2d(num_features=output_channels)
+        self.compare_batch_norm = compare_batch_norm
+        if self.compare_batch_norm:
+            self.bn = nn.BatchNorm2d(num_features=output_channels)
 
     def forward(self, x):
-        return self.bn(self.conv(x))
+        output = self.conv(x)
+        if self.compare_batch_norm:
+            output = self.bn(output)
+        return output
 
 
 class ResidualBlock(nn.Module):
-    def __init__(self, input_channels, output_channels, first_layer=False):
+    """
+    Residual Block as part of ResNet50.
+    """
+    def __init__(self, input_channels, output_channels, compare_batch_norm, first_layer=False):
         super().__init__()
         residual_channels = input_channels // 4
         stride = 1
@@ -194,12 +210,12 @@ class ResidualBlock(nn.Module):
 
         if self.is_projection or first_layer:
             stride += self.is_projection and not first_layer
-            self.proj = ConvBlock(input_channels, output_channels, 1, stride, 0)
+            self.proj = ConvBlock(input_channels, output_channels, 1, stride, 0, compare_batch_norm)
             residual_channels = input_channels // stride
 
-        self.conv1 = ConvBlock(input_channels, residual_channels, 1, 1, 0)
-        self.conv2 = ConvBlock(residual_channels, residual_channels, 3, stride, 1)
-        self.conv3 = ConvBlock(residual_channels, output_channels, 1, 1, 0)
+        self.conv1 = ConvBlock(input_channels, residual_channels, 1, 1, 0, compare_batch_norm)
+        self.conv2 = ConvBlock(residual_channels, residual_channels, 3, stride, 1, compare_batch_norm)
+        self.conv3 = ConvBlock(residual_channels, output_channels, 1, 1, 0, compare_batch_norm)
         self.relu = nn.ReLU()
 
     def forward(self, x):
@@ -213,24 +229,30 @@ class ResidualBlock(nn.Module):
 
 
 class ResNet50(nn.Module):
-    def __init__(self, input_channels=3, num_classes=1000):
+    """
+    Implements ResNet50.
+    """
+    def __init__(self, compare_batch_norm, compare_dropout, dropout_param=0.5, input_channels=3, num_classes=1000):
         super().__init__()
         num_blocks = [3, 4, 6, 3]
         output_features = [256, 512, 1024, 2048]
-        self.res_blocks = nn.ModuleList([ResidualBlock(64, 256, True)])
+        self.res_blocks = nn.ModuleList([ResidualBlock(64, 256, compare_batch_norm, True)])
 
         for i in range(len(output_features)):
             if i > 0:
-                self.res_blocks.append(ResidualBlock(output_features[i - 1], output_features[i]))
+                self.res_blocks.append(ResidualBlock(output_features[i - 1], output_features[i], compare_batch_norm))
             for _ in range(num_blocks[i] - 1):
-                self.res_blocks.append(ResidualBlock(output_features[i], output_features[i]))
+                self.res_blocks.append(ResidualBlock(output_features[i], output_features[i], compare_batch_norm))
 
-        self.conv1 = ConvBlock(input_channels, 64, 7, 2, 3)
+        self.conv1 = ConvBlock(input_channels, 64, 7, 2, 3, compare_batch_norm)
         self.max_pool = nn.MaxPool2d(kernel_size=3, stride=2, padding=1)
         self.avg_pool = nn.AdaptiveAvgPool2d((1, 1))
         self.linear = nn.Linear(2048, num_classes)
         self.relu = nn.ReLU()
         self.softmax = nn.Softmax(dim=1)
+        self.compare_dropout = compare_dropout
+        if self.compare_dropout:
+            self.dropout = nn.Dropout(p=dropout_param)
         self.initialise_weights()
 
     def initialise_weights(self):
@@ -243,6 +265,30 @@ class ResNet50(nn.Module):
         activation = self.max_pool(activation)
         for res_block in self.res_blocks:
             activation = res_block(activation)
+            if self.compare_dropout:
+                activation = self.dropout(activation)
         pooled = self.avg_pool(activation)
         flattened = torch.flatten(pooled, 1)
-        return self.softmax(self.linear(flattened))
+        return self.linear(flattened)
+
+
+class ResNet50LastLayer(nn.Module):
+    """ Implementation of regularisation techniques when training only the last layer of (pretrained) ResNet50. """
+    def __init__(self, resnet_pretrained, resnet_output_shape, compare_batch_norm, compare_dropout, dropout_param=0.5):
+        super().__init__()
+        self.resnet_pretrained = resnet_pretrained
+        self.compare_batch_norm = compare_batch_norm
+        self.compare_dropout = compare_dropout
+
+        if self.compare_batch_norm:
+            self.bn = nn.BatchNorm1d(resnet_output_shape)
+        if self.compare_dropout:
+            self.dropout = nn.Dropout(p=dropout_param)
+
+    def forward(self, x):
+        out = self.resnet_pretrained(x)
+        if self.compare_batch_norm:
+            out = self.bn(out)
+        if self.compare_dropout:
+            out = self.dropout(out)
+        return out

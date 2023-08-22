@@ -9,6 +9,8 @@ from math import inf
 
 from numpy import log10
 from torch.utils.data import DataLoader
+from torchvision.transforms import RandomHorizontalFlip, RandomVerticalFlip, RandomRotation, RandomCrop,\
+                                   RandomGrayscale, RandomInvert
 
 from datasets import *
 
@@ -23,9 +25,9 @@ class Workflow:
     """ Set up general workflow for hyperparameters, configuration constants, training, testing, and saving. """
 
     def __init__(self, training_set, test_set, num_epochs=int(1e6), grad_norm_tol=1e-8, lr=None, compare_invex=True,
-                 invex_val=1e-1, compare_l2=False, l2_val=1e-2, compare_dropout=False, compare_batch_norm=False,
-                 compare_data_aug=False, reconstruction=False, least_sq=False, binary_log_reg=False,
-                 synthetic=False, sgd=True, batch_size=64):
+                 invex_val=1e-1, invex_p_ones=False, compare_l2=False, l2_val=1e-2, compare_dropout=False,
+                 dropout_val=0.5, compare_batch_norm=False, compare_data_aug=False, img_length=-1, reconstruction=False,
+                 least_sq=False, binary_log_reg=False, synthetic=False, sgd=True, batch_size=64):
         """
         Set up necessary constants and variables for all experiments.
 
@@ -36,11 +38,14 @@ class Workflow:
         :param lr: learning rate
         :param compare_invex: True if comparing invex regularisation, False otherwise
         :param invex_val: invex regularisation lambda value
+        :param invex_p_ones: True if using scalar invex p multiplied by vector of ones, False if using standard vector p
         :param compare_l2: True if comparing L2 regularisation, False otherwise
         :param l2_val: L2 regularisation lambda value
         :param compare_dropout: True if comparing dropout, False otherwise
+        :param dropout_val: Dropout hyperparameter value p
         :param compare_batch_norm: True if comparing batch normalisation, False otherwise
         :param compare_data_aug: True if comparing data augmentation, False otherwise
+        :param img_length: Length of single image from dataset (for data augmentation)
         :param reconstruction: True if performing reconstruction, False otherwise
         :param least_sq: True if performing linear least squares regression, False otherwise
         :param binary_log_reg: True if performing binary logistic regression, False otherwise
@@ -63,8 +68,11 @@ class Workflow:
 
         self.invex_val = invex_val
         self.invex_param = self.invex_val * self.compare_invex
+        self.invex_p_ones = invex_p_ones
         self.l2_val = l2_val
         self.l2_param = self.l2_val * self.compare_l2
+        self.dropout_val = dropout_val
+        self.dropout_param = self.dropout_val * self.compare_dropout
 
         self.reconstruction = reconstruction
         self.least_sq = least_sq
@@ -104,6 +112,12 @@ class Workflow:
         self.avg_test_objectives_to_plot = torch.zeros_like(self.epochs_to_plot, dtype=torch.float64).to(device)
         self.grad_l_inf_norm_to_plot = torch.zeros_like(self.epochs_to_plot, dtype=torch.float64).to(device)
         self.plot_idx = 0
+
+        if self.compare_data_aug:
+            augmentations = Compose([RandomHorizontalFlip(), RandomVerticalFlip(), RandomRotation(45),
+                                     RandomCrop(img_length / 2), RandomGrayscale(), RandomInvert(), ToTensor(),
+                                     ConvertImageDtype(torch.float64)])
+            training_set.dataset.transform = augmentations
 
         self.training_loader = DataLoader(training_set, batch_size=self.batch_size)
         self.test_loader = DataLoader(test_set, batch_size=self.batch_size)
@@ -152,7 +166,8 @@ class Workflow:
             self.avg_training_losses_to_plot[self.plot_idx] = avg_loss
             self.avg_training_objectives_to_plot[self.plot_idx] = avg_objective
 
-        if self.check_grad_convergence(model, epoch):
+        # Minor code optimisation - don't bother calculating gradient convergence if we set a negative tolerance
+        if self.grad_norm_tol >= 0 and self.check_grad_convergence(model, epoch):
             print(f"Training converged after {epoch} epochs.")
             return True
         return False

@@ -15,15 +15,17 @@ if __name__ == '__main__':
     print(experiment.lr)
 
     # Define model and loss function/optimiser
-    resnet50_model = ResNet50(num_classes=10).to(dtype=torch.float64)
+    resnet50_model = ResNet50(experiment.compare_batch_norm, experiment.compare_dropout, experiment.dropout_param,
+                              num_classes=10).to(dtype=torch.float64)
     resnet50_model_name = f"{resnet50_model=}".split('=')[0]  # Gives name of model variable!
+    resnet50_model_name += "_ones" if experiment.invex_p_ones else ""
     print(resnet50_model)
 
-    resnet50_model = ModuleWrapper(resnet50_model, lamda=experiment.invex_param, log_out=True)
+    resnet50_model = ModuleWrapper(resnet50_model, lamda=experiment.invex_param, p_ones=experiment.invex_p_ones)
     resnet50_model.init_ps(train_dataloader=experiment.training_loader)
     resnet50_model = resnet50_model.to(device)
 
-    cross_entropy = nn.NLLLoss()
+    cross_entropy = nn.CrossEntropyLoss()
     sgd = torch.optim.SGD(resnet50_model.parameters(), lr=experiment.lr)
 
     print("\nUsing", device, "\n")
