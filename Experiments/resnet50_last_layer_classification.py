@@ -36,7 +36,6 @@ if __name__ == '__main__':
                                                   experiment.compare_batch_norm, experiment.compare_dropout,
                                                   experiment.dropout_param).to(dtype=torch.float64)
     resnet50_last_layer_model_name = f"{resnet50_last_layer_model=}".split('=')[0]  # Gives name of model variable!
-    resnet50_last_layer_model_name += "_ones" if experiment.invex_p_ones else ""
     print(resnet50_last_layer_model)
 
     resnet50_last_layer_model = ModuleWrapper(resnet50_last_layer_model, lamda=experiment.invex_param,

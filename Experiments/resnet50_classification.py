@@ -18,7 +18,6 @@ if __name__ == '__main__':
     resnet50_model = ResNet50(experiment.compare_batch_norm, experiment.compare_dropout, experiment.dropout_param,
                               num_classes=10).to(dtype=torch.float64)
     resnet50_model_name = f"{resnet50_model=}".split('=')[0]  # Gives name of model variable!
-    resnet50_model_name += "_ones" if experiment.invex_p_ones else ""
     print(resnet50_model)
 
     resnet50_model = ModuleWrapper(resnet50_model, lamda=experiment.invex_param, p_ones=experiment.invex_p_ones)

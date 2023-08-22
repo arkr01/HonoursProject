@@ -94,6 +94,7 @@ class Workflow:
         self.batch_size = batch_size if self.sgd else len(self.training_set)
 
         model_invex = "_invex" if self.compare_invex else ""
+        model_invex_ones = "_ones" if self.invex_p_ones else ""
         model_l2 = "_l2" if self.compare_l2 else ""
         model_dropout = "_dropout" if self.compare_dropout else ""
         model_batch_norm = "_batch_norm" if self.compare_batch_norm else ""
@@ -103,8 +104,8 @@ class Workflow:
         model_invex_lambda = f"_lambda{invex_val}" if self.compare_invex else ""
         model_l2_lambda = f"_l2lambda{l2_val}" if self.compare_l2 else ""
 
-        choices = model_invex + model_l2 + model_dropout + model_batch_norm + model_data_aug + model_gd + model_lr
-        choices += model_invex_lambda + model_l2_lambda
+        choices = model_invex + model_invex_ones + model_l2 + model_dropout + model_batch_norm + model_data_aug
+        choices += model_gd + model_lr + model_invex_lambda + model_l2_lambda
         self.model_config = "with" + choices if len(choices) else "unregularised"
 
         self.epochs_to_plot = torch.logspace(0, log10(self.num_epochs), 100).long().unique() - 1
