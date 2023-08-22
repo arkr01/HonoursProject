@@ -13,7 +13,8 @@ from networks import *
 
 if __name__ == '__main__':
     # Set up data loaders, set hyperparameters, etc.
-    experiment = Workflow(cifar10_training_data, cifar10_test_data, lr=0.01, grad_norm_tol=-1, num_epochs=200)
+    experiment = Workflow(cifar10_training_data, cifar10_test_data, lr=0.01, grad_norm_tol=-1, num_epochs=200,
+                          img_length=cifar_img_shape[1])
     print(experiment.lr)
 
     # Define model and loss function/optimiser
