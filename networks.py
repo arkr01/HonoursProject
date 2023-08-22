@@ -34,7 +34,7 @@ class ModuleWrapper(nn.Module):
             ps = []
             for inputs, targets in iter(train_dataloader):
                 if self.p_ones:
-                    p = 0.0
+                    p = torch.tensor([0.0])
                 else:
                     outputs = self.module(inputs)
                     p = torch.zeros_like(outputs[0] if self.multi_output else outputs)
