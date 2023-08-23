@@ -14,7 +14,6 @@ from torchvision.transforms import RandomHorizontalFlip, RandomVerticalFlip, Ran
 
 from datasets import *
 
-MODELS_FOLDER = root_dir + '/Models/'
 LOSS_METRICS_FOLDER = root_dir + '/Losses_Metrics/'
 PLOTS_RESULTS_FOLDER = root_dir + '/Plots_Results/'
 
@@ -111,8 +110,6 @@ class Workflow:
         self.epochs_to_plot = torch.logspace(0, log10(self.num_epochs), 100).long().unique() - 1
         self.avg_training_losses_to_plot = torch.zeros_like(self.epochs_to_plot, dtype=torch.float64).to(device)
         self.avg_test_losses_to_plot = torch.zeros_like(self.epochs_to_plot, dtype=torch.float64).to(device)
-        self.avg_training_objectives_to_plot = torch.zeros_like(self.epochs_to_plot, dtype=torch.float64).to(device)
-        self.avg_test_objectives_to_plot = torch.zeros_like(self.epochs_to_plot, dtype=torch.float64).to(device)
         self.grad_l_inf_norm_to_plot = torch.zeros_like(self.epochs_to_plot, dtype=torch.float64).to(device)
         self.plot_idx = 0
 
@@ -133,7 +130,7 @@ class Workflow:
         num_examples = len(self.training_loader.dataset)
         model.train()
 
-        total_loss = total_objective = correct = 0
+        total_loss = correct = 0
         print(f"Epoch {epoch + 1}\n-------------------------------")
         for batch, (examples, targets) in enumerate(self.training_loader):
             examples, targets = examples.to(device), targets.to(device)
@@ -153,14 +150,12 @@ class Workflow:
             optimizer.step()
 
             total_loss += loss.item()
-            total_objective += objective.item()
             if batch % 100 == 0:
                 loss, current = loss.item(), (batch + 1) * len(examples)
                 print(f"loss: {loss:>7f}  [{current:>5d}/{num_examples:>5d}]")
 
         # Calculate average metrics
         avg_loss = total_loss / self.num_train_batches
-        avg_objective = total_objective / self.num_train_batches
         correct /= num_examples
 
         # Print and save
@@ -170,7 +165,6 @@ class Workflow:
 
         if epoch in self.epochs_to_plot:
             self.avg_training_losses_to_plot[self.plot_idx] = avg_loss
-            self.avg_training_objectives_to_plot[self.plot_idx] = avg_objective
 
         # Minor code optimisation - don't bother calculating gradient convergence if we set a negative tolerance
         if self.grad_norm_tol >= 0 and self.check_grad_convergence(model, epoch):
@@ -223,7 +217,6 @@ class Workflow:
         # Save test loss (only update plot_idx here as test is always called after train)
         if epoch in self.epochs_to_plot:
             self.avg_test_losses_to_plot[self.plot_idx] = test_loss
-            self.avg_test_objectives_to_plot[self.plot_idx] = test_objective
             self.plot_idx += 1
 
         print(f"Test loss (avg): {test_loss:>8f}" + ("\n" if self.reconstruction else ""))
@@ -269,8 +262,6 @@ class Workflow:
         self.epochs_to_plot = torch.narrow(self.epochs_to_plot, 0, 0, self.plot_idx)
         self.avg_training_losses_to_plot = torch.narrow(self.avg_training_losses_to_plot, 0, 0, self.plot_idx)
         self.avg_test_losses_to_plot = torch.narrow(self.avg_test_losses_to_plot, 0, 0, self.plot_idx)
-        self.avg_training_objectives_to_plot = torch.narrow(self.avg_training_objectives_to_plot, 0, 0, self.plot_idx)
-        self.avg_test_objectives_to_plot = torch.narrow(self.avg_test_objectives_to_plot, 0, 0, self.plot_idx)
         self.grad_l_inf_norm_to_plot = torch.narrow(self.grad_l_inf_norm_to_plot, 0, 0, self.plot_idx)
 
     def save(self, model, model_name):
@@ -282,10 +273,6 @@ class Workflow:
         :return: None
         """
         # Create necessary directories if they do not exist
-        if not exists(MODELS_FOLDER):
-            mkdir(MODELS_FOLDER)
-        if not exists(MODELS_FOLDER + model_name):
-            mkdir(MODELS_FOLDER + model_name)
         if not exists(LOSS_METRICS_FOLDER):
             mkdir(LOSS_METRICS_FOLDER)
         if not exists(LOSS_METRICS_FOLDER + model_name):
@@ -309,9 +296,8 @@ class Workflow:
             mkdir(PLOTS_RESULTS_FOLDER + model_name + '/Test/Objective')
             mkdir(PLOTS_RESULTS_FOLDER + model_name + '/Test/Both')
 
-        # Save model state dict, L2 gradient norm, avg train/test losses and objectives (to plot), and parameters
+        # Save L2 gradient norm, avg train/test losses, parameters
         model_type_filename = f"{model_name}/{self.model_config}"
-        torch.save(model.state_dict(), f"{MODELS_FOLDER}{model_type_filename}.pth")
 
         torch.save(self.epochs_to_plot, f"{LOSS_METRICS_FOLDER}{model_name}/epochs_to_plot.pth")
         torch.save(self.grad_l_inf_norm_to_plot, f"{LOSS_METRICS_FOLDER}{model_type_filename}_grad_norm.pth")
@@ -320,11 +306,6 @@ class Workflow:
                    f"{LOSS_METRICS_FOLDER}{model_name}/Train/{self.model_config}_loss.pth")
         torch.save(self.avg_test_losses_to_plot,
                    f"{LOSS_METRICS_FOLDER}{model_name}/Test/{self.model_config}_loss.pth")
-
-        torch.save(self.avg_training_objectives_to_plot,
-                   f"{LOSS_METRICS_FOLDER}{model_name}/Train/{self.model_config}_objective.pth")
-        torch.save(self.avg_test_objectives_to_plot,
-                   f"{LOSS_METRICS_FOLDER}{model_name}/Test/{self.model_config}_objective.pth")
 
         # Get learned parameters (excluding p variables) and convert into single tensor - for comparison
         parameters = [parameter.detach().flatten() for parameter in model.parameters()]
