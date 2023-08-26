@@ -15,6 +15,7 @@ if __name__ == '__main__':
     # Set up data loaders, set hyperparameters, etc.
     experiment = Workflow(cifar10_training_data, cifar10_test_data, lr=0.01, grad_norm_tol=-1, num_epochs=200,
                           img_length=cifar_img_shape[1])
+    num_classes = 10
     print(experiment.lr)
 
     # Define model and loss function/optimiser
@@ -25,16 +26,19 @@ if __name__ == '__main__':
         if 'fc' not in name:  # (only) the last layer is named 'fc' (fully-connected)
             param.requires_grad = False
 
-    # Get number of output features from final layer
-    resnet_output_shape = 0
+    # Get number of input features from final layer
+    resnet_input_shape = 0
     for name, layer in resnet50_last_layer.named_modules():
         if isinstance(layer, nn.Linear):
-            resnet_output_shape = resnet50_last_layer._modules[name].out_features
+            resnet_input_shape = resnet50_last_layer._modules[name].in_features
             break
 
+    # Set number of classes
+    resnet50_last_layer.fc = nn.Linear(resnet_input_shape, num_classes)
+
     # Define generalised model to allow for dropout and batch normalisation
-    resnet50_last_layer_model = ResNet50LastLayer(resnet50_last_layer, resnet_output_shape,
-                                                  experiment.compare_batch_norm, experiment.compare_dropout,
+    resnet50_last_layer_model = ResNet50LastLayer(resnet50_last_layer, num_classes, experiment.compare_batch_norm,
+                                                  experiment.compare_dropout,
                                                   experiment.dropout_param).to(dtype=torch.float64)
     resnet50_last_layer_model_name = f"{resnet50_last_layer_model=}".split('=')[0]  # Gives name of model variable!
     print(resnet50_last_layer_model)
