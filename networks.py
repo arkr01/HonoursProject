@@ -273,22 +273,26 @@ class ResNet50(nn.Module):
 
 
 class ResNet50LastLayer(nn.Module):
-    """ Implementation of regularisation techniques when training only the last layer of (pretrained) ResNet50. """
-    def __init__(self, resnet_pretrained, resnet_output_shape, compare_batch_norm, compare_dropout, dropout_param=0.5):
+    """
+    Implementation of regularisation techniques to modify last (hidden) layer, when training only the last (overall)
+    layer of (pretrained) ResNet50.
+    """
+    def __init__(self, previous_layer_output_shape, compare_batch_norm, compare_dropout, dropout_param=0.5):
         super().__init__()
-        self.resnet_pretrained = resnet_pretrained
         self.compare_batch_norm = compare_batch_norm
         self.compare_dropout = compare_dropout
 
         if self.compare_batch_norm:
-            self.bn = nn.BatchNorm1d(resnet_output_shape)
+            self.bn = nn.BatchNorm2d(num_features=previous_layer_output_shape)
+        self.avgpool = nn.AdaptiveAvgPool2d((1, 1))
         if self.compare_dropout:
             self.dropout = nn.Dropout(p=dropout_param)
 
     def forward(self, x):
-        out = self.resnet_pretrained(x)
         if self.compare_batch_norm:
-            out = self.bn(out)
+            out = self.avgpool(self.bn(x))
+        else:
+            out = self.avgpool(x)
         if self.compare_dropout:
             out = self.dropout(out)
         return out
