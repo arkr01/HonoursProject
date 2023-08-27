@@ -9,8 +9,7 @@ from math import inf
 
 from numpy import log10
 from torch.utils.data import DataLoader
-from torchvision.transforms import RandomHorizontalFlip, RandomVerticalFlip, RandomRotation, RandomCrop,\
-                                   RandomGrayscale, RandomInvert
+from torchvision.transforms import RandomHorizontalFlip, RandomVerticalFlip, RandomEqualize, RandomInvert
 
 from datasets import *
 
@@ -121,9 +120,8 @@ class Workflow:
         self.plot_idx = 0
 
         if self.compare_data_aug:
-            augmentations = Compose([RandomHorizontalFlip(), RandomVerticalFlip(), RandomRotation(45),
-                                     RandomCrop(img_length / 2), RandomGrayscale(), RandomInvert(), ToTensor(),
-                                     ConvertImageDtype(torch.float64)])
+            augmentations = Compose([RandomHorizontalFlip(p=0.2), RandomVerticalFlip(p=0.1), RandomEqualize(p=0.1),
+                                     RandomInvert(p=0.2), ToTensor(), ConvertImageDtype(torch.float64)])
             if subset:
                 training_set.dataset.transform = augmentations
             else:

@@ -13,8 +13,8 @@ from workflow import LOSS_METRICS_FOLDER, PLOTS_RESULTS_FOLDER, inf
 rcParams["text.usetex"] = True  # Allows LaTeX in titles/labels/legends
 
 # What experiment we're plotting
-model = "resnet50_model"
-plot_title = "ResNet50 Classification"
+model = "resnet50_last_layer_model"
+plot_title = "ResNet50 (Last Layer) Classification"
 lr = 0.01
 lambda_1 = 0.1
 lambda_2 = 0.01
@@ -73,7 +73,7 @@ with torch.no_grad():
     plt.figure()
     plt.plot(epochs_to_plot, unreg_train_loss, 'k', ls=(0, (1, 1)))  # dotted
     plt.plot(epochs_to_plot, invex_train_loss, 'r', ls=(0, (5, 1)))  # densely dashed
-    plt.plot(epochs_to_plot, invex_ones_train_loss, 'g', ls=(0, (5, 5)))  # dashed
+    plt.plot(epochs_to_plot, invex_ones_train_loss, 'gx', ls=(0, (5, 5)))  # dashed
     plt.plot(epochs_to_plot, l2_train_loss, 'b', ls=(0, (5, 10)))  # loosely dashed
     plt.plot(epochs_to_plot, data_aug_train_loss, 'c', ls=(0, (3, 1, 1, 1)))  # densely dash dotted
     plt.plot(epochs_to_plot, dropout_train_loss, 'm', ls=(0, (3, 5, 1, 5)))  # dash dotted
@@ -89,7 +89,7 @@ with torch.no_grad():
     plt.figure()
     plt.plot(epochs_to_plot, unreg_test_loss, 'k', ls=(0, (1, 1)))  # dotted
     plt.plot(epochs_to_plot, invex_test_loss, 'r', ls=(0, (5, 1)))  # densely dashed
-    plt.plot(epochs_to_plot, invex_ones_test_loss, 'g', ls=(0, (5, 5)))  # dashed
+    plt.plot(epochs_to_plot, invex_ones_test_loss, 'gx', ls=(0, (5, 5)))  # dashed
     plt.plot(epochs_to_plot, l2_test_loss, 'b', ls=(0, (5, 10)))  # loosely dashed
     plt.plot(epochs_to_plot, data_aug_test_loss, 'c', ls=(0, (3, 1, 1, 1)))  # densely dash dotted
     plt.plot(epochs_to_plot, dropout_test_loss, 'm', ls=(0, (3, 5, 1, 5)))  # dash dotted
