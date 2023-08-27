@@ -49,8 +49,8 @@ cifar10_classes = cifar10_training_data.classes
 cifar100_classes = cifar100_training_data.classes
 
 # Create subsets of train/test datasets
-NUM_PER_CLASS_TRAIN_FASHION = 10  # Specify how many training examples per class to include in subset
-NUM_PER_CLASS_TEST_FASHION = 2  # Specify how many test examples per class to include in subset
+NUM_PER_CLASS_TRAIN = 10  # Specify how many training examples per class to include in subset
+NUM_PER_CLASS_TEST = 10  # Specify how many test examples per class to include in subset
 
 
 def get_subset_examples(train_data, test_data, num_classes, num_train, num_test):
@@ -80,11 +80,11 @@ def get_subset_examples(train_data, test_data, num_classes, num_train, num_test)
 
 # Set up subsets for training/testing
 fashion_training_subset, fashion_test_subset = get_subset_examples(fashion_training_data, fashion_test_data,
-                                                                   num_fashion_classes, NUM_PER_CLASS_TRAIN_FASHION,
-                                                                   NUM_PER_CLASS_TEST_FASHION)
+                                                                   num_fashion_classes, NUM_PER_CLASS_TRAIN,
+                                                                   NUM_PER_CLASS_TEST)
 fashion_training_two_class, fashion_test_two_class = get_subset_examples(fashion_training_data, fashion_test_data, 2,
-                                                                         NUM_PER_CLASS_TRAIN_FASHION,
-                                                                         NUM_PER_CLASS_TEST_FASHION)
+                                                                         NUM_PER_CLASS_TRAIN,
+                                                                         NUM_PER_CLASS_TEST)
 cifar10_training_subset, cifar10_test_subset = get_subset_examples(cifar10_training_data, cifar10_test_data, 10,
-                                                                   NUM_PER_CLASS_TRAIN_FASHION,
-                                                                   NUM_PER_CLASS_TEST_FASHION)
+                                                                   NUM_PER_CLASS_TRAIN,
+                                                                   NUM_PER_CLASS_TEST)

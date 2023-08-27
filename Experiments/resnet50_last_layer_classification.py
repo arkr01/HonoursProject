@@ -1,6 +1,7 @@
 import sys
 import os
 
+import torch.optim
 from torchvision.models import resnet50, ResNet50_Weights
 
 # Handle import issues by referencing parent directory via absolute paths
@@ -13,8 +14,8 @@ from networks import *
 
 if __name__ == '__main__':
     # Set up data loaders, set hyperparameters, etc.
-    experiment = Workflow(cifar10_training_data, cifar10_test_data, lr=0.01, grad_norm_tol=-1, num_epochs=200,
-                          img_length=cifar_img_shape[1])
+    experiment = Workflow(cifar10_training_subset, cifar10_test_subset, lr=0.01, grad_norm_tol=-1, num_epochs=200,
+                          sgd=False, lbfgs=True, subset=True, img_length=cifar_img_shape[1])
     num_classes = 10
     print(experiment.lr)
 
@@ -58,7 +59,7 @@ if __name__ == '__main__':
     resnet50_last_layer_model = resnet50_last_layer_model.to(device)
 
     cross_entropy = nn.CrossEntropyLoss()
-    sgd = torch.optim.SGD(resnet50_last_layer_model.parameters(), lr=experiment.lr)
+    sgd = torch.optim.LBFGS(resnet50_last_layer_model.parameters(), lr=experiment.lr)
 
     print("\nUsing", device, "\n")
 

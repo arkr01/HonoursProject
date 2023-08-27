@@ -27,7 +27,7 @@ class Workflow:
                  invex_val=1e-1, invex_p_ones=False, compare_l2=False, l2_val=1e-2, compare_dropout=False,
                  dropout_val=0.5, compare_batch_norm=False, compare_data_aug=False, img_length=-1,
                  subset=False, reconstruction=False, least_sq=False, binary_log_reg=False, synthetic=False, sgd=True,
-                 batch_size=64):
+                 batch_size=64, lbfgs=False):
         """
         Set up necessary constants and variables for all experiments.
 
@@ -53,6 +53,7 @@ class Workflow:
         :param synthetic: True if using synthetic data, False otherwise
         :param sgd: True if performing SGD, False if performing pure GD
         :param batch_size: Batch size (length of training dataset if sgd == False)
+        :param lbfgs: True if using LBFGS, False otherwise.
         """
         self.training_set = training_set
         self.test_set = test_set
@@ -90,6 +91,7 @@ class Workflow:
             self.lr = 1 / (lg_unreg + self.l2_val)
 
         self.sgd = sgd
+        self.lbfgs = lbfgs
         self.batch_size = batch_size if self.sgd else len(self.training_set)
 
         model_invex = "_invex" if self.compare_invex else ""
@@ -135,19 +137,44 @@ class Workflow:
         for batch, (examples, targets) in enumerate(self.training_loader):
             examples, targets = examples.to(device), targets.to(device)
             model.set_batch_idx(batch)
-            prediction = model(examples)
-            if self.binary_log_reg:
-                targets = targets.unsqueeze(1).to(dtype=torch.float64)
-                prediction = torch.clamp(prediction, min=0.0, max=1.0)  # For numerical issues
-            loss, objective = self.calculate_loss_and_objective(model, prediction, examples, targets, loss_fn)
-            if not self.reconstruction and not self.least_sq:
-                predicted = prediction.argmax(1) if not self.binary_log_reg else prediction.round()
-                correct += (predicted == targets).type(torch.float).sum().item()
+            loss = 0
 
-            # Backpropagation
-            optimizer.zero_grad()
-            objective.backward()
-            optimizer.step()
+            # Handle closure() for LBFGS
+            if self.lbfgs:
+                # closure() may run several times per epoch, ensure to only calculate accuracy once
+                num_closure = 0
+                def closure():
+                    nonlocal targets, loss, correct, num_closure
+                    prediction = model(examples)
+                    if self.binary_log_reg:
+                        targets = targets.unsqueeze(1).to(dtype=torch.float64)
+                        prediction = torch.clamp(prediction, min=0.0, max=1.0)  # For numerical issues
+                    loss, obj = self.calculate_loss_and_objective(model, prediction, examples, targets, loss_fn)
+                    if not self.reconstruction and not self.least_sq:
+                        pred = prediction.argmax(1) if not self.binary_log_reg else prediction.round()
+                        num_closure += 1
+                        if num_closure == 1:
+                            correct += (pred == targets).type(torch.float).sum().item()
+
+                    # Backpropagation
+                    optimizer.zero_grad()
+                    obj.backward()
+                    return obj
+                optimizer.step(closure)
+            else:
+                prediction = model(examples)
+                if self.binary_log_reg:
+                    targets = targets.unsqueeze(1).to(dtype=torch.float64)
+                    prediction = torch.clamp(prediction, min=0.0, max=1.0)  # For numerical issues
+                loss, objective = self.calculate_loss_and_objective(model, prediction, examples, targets, loss_fn)
+                if not self.reconstruction and not self.least_sq:
+                    predicted = prediction.argmax(1) if not self.binary_log_reg else prediction.round()
+                    correct += (predicted == targets).type(torch.float).sum().item()
+
+                # Backpropagation
+                optimizer.zero_grad()
+                objective.backward()
+                optimizer.step()
 
             total_loss += loss.item()
             if batch % 100 == 0:
