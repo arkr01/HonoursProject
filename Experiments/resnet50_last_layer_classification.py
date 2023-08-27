@@ -15,7 +15,7 @@ from networks import *
 if __name__ == '__main__':
     # Set up data loaders, set hyperparameters, etc.
     experiment = Workflow(cifar10_training_subset, cifar10_test_subset, lr=0.01, grad_norm_tol=-1, num_epochs=200,
-                          sgd=False, lbfgs=True, subset=True, img_length=cifar_img_shape[1])
+                          sgd=False, lbfgs=True, subset=True)
     num_classes = 10
     print(experiment.lr)
 
@@ -59,13 +59,16 @@ if __name__ == '__main__':
     resnet50_last_layer_model = resnet50_last_layer_model.to(device)
 
     cross_entropy = nn.CrossEntropyLoss()
-    sgd = torch.optim.LBFGS(resnet50_last_layer_model.parameters(), lr=experiment.lr)
+    if experiment.lbfgs:
+        optimiser = torch.optim.LBFGS(resnet50_last_layer_model.parameters(), lr=experiment.lr, history_size=20)
+    else:
+        optimiser = torch.optim.SGD(resnet50_last_layer_model.parameters(), lr=experiment.lr)
 
     print("\nUsing", device, "\n")
 
     # Train/test until convergence or specified # epochs
     for epoch in range(experiment.num_epochs):
-        converged = experiment.train(resnet50_last_layer_model, cross_entropy, sgd, epoch)
+        converged = experiment.train(resnet50_last_layer_model, cross_entropy, optimiser, epoch)
         experiment.test(resnet50_last_layer_model, cross_entropy, epoch)
         if converged:
             experiment.truncate_metrics_to_plot()

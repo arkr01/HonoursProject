@@ -24,9 +24,8 @@ class Workflow:
 
     def __init__(self, training_set, test_set, num_epochs=int(1e6), grad_norm_tol=1e-8, lr=None, compare_invex=False,
                  invex_val=1e-1, invex_p_ones=False, compare_l2=False, l2_val=1e-2, compare_dropout=False,
-                 dropout_val=0.5, compare_batch_norm=False, compare_data_aug=False, img_length=-1,
-                 subset=False, reconstruction=False, least_sq=False, binary_log_reg=False, synthetic=False, sgd=True,
-                 batch_size=64, lbfgs=False):
+                 dropout_val=0.5, compare_batch_norm=False, compare_data_aug=False, subset=False, reconstruction=False,
+                 least_sq=False, binary_log_reg=False, synthetic=False, sgd=True, batch_size=64, lbfgs=False):
         """
         Set up necessary constants and variables for all experiments.
 
@@ -44,7 +43,6 @@ class Workflow:
         :param dropout_val: Dropout hyperparameter value p
         :param compare_batch_norm: True if comparing batch normalisation, False otherwise
         :param compare_data_aug: True if comparing data augmentation, False otherwise
-        :param img_length: Length of single image from dataset (for data augmentation)
         :param subset: True if using Subset class for dataset, False otherwise (for data augmentation)
         :param reconstruction: True if performing reconstruction, False otherwise
         :param least_sq: True if performing linear least squares regression, False otherwise
@@ -131,7 +129,7 @@ class Workflow:
         self.test_loader = DataLoader(test_set, batch_size=self.batch_size)
         self.num_train_batches = len(self.training_loader)
 
-    def train(self, model, loss_fn, optimizer, epoch):
+    def train(self, model, loss_fn, optimiser, epoch):
         num_examples = len(self.training_loader.dataset)
         model.train()
 
@@ -160,10 +158,10 @@ class Workflow:
                             correct += (pred == targets).type(torch.float).sum().item()
 
                     # Backpropagation
-                    optimizer.zero_grad()
+                    optimiser.zero_grad()
                     obj.backward()
                     return obj
-                optimizer.step(closure)
+                optimiser.step(closure)
             else:
                 prediction = model(examples)
                 if self.binary_log_reg:
@@ -175,9 +173,9 @@ class Workflow:
                     correct += (predicted == targets).type(torch.float).sum().item()
 
                 # Backpropagation
-                optimizer.zero_grad()
+                optimiser.zero_grad()
                 objective.backward()
-                optimizer.step()
+                optimiser.step()
 
             total_loss += loss.item()
             if batch % 100 == 0:
