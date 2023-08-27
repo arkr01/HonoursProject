@@ -20,6 +20,11 @@ if __name__ == '__main__':
     resnet50_model_name = f"{resnet50_model=}".split('=')[0]  # Gives name of model variable!
     print(resnet50_model)
 
+    # Initialise parameters to 0 if needed
+    if experiment.zero_init:
+        for _, param in resnet50_model.named_parameters():
+            param.detach().zero_()
+
     resnet50_model = ModuleWrapper(resnet50_model, lamda=experiment.invex_param, p_ones=experiment.invex_p_ones)
     resnet50_model.init_ps(train_dataloader=experiment.training_loader)
     resnet50_model = resnet50_model.to(device)

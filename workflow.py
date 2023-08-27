@@ -25,7 +25,8 @@ class Workflow:
     def __init__(self, training_set, test_set, num_epochs=int(1e6), grad_norm_tol=1e-8, lr=None, compare_invex=False,
                  invex_val=1e-1, invex_p_ones=False, compare_l2=False, l2_val=1e-2, compare_dropout=False,
                  dropout_val=0.5, compare_batch_norm=False, compare_data_aug=False, subset=False, reconstruction=False,
-                 least_sq=False, binary_log_reg=False, synthetic=False, sgd=True, batch_size=64, lbfgs=False):
+                 least_sq=False, binary_log_reg=False, synthetic=False, sgd=True, batch_size=64, lbfgs=False,
+                 zero_init=False):
         """
         Set up necessary constants and variables for all experiments.
 
@@ -51,6 +52,7 @@ class Workflow:
         :param sgd: True if performing SGD, False if performing pure GD
         :param batch_size: Batch size (length of training dataset if sgd == False)
         :param lbfgs: True if using LBFGS, False otherwise.
+        :param zero_init: True for zero initialisation of parameters, False otherwise.
         """
         self.training_set = training_set
         self.test_set = test_set
@@ -92,6 +94,7 @@ class Workflow:
         self.lbfgs = lbfgs
         if self.sgd and self.lbfgs:
             raise Exception("Incorrect Optimiser Selected")
+        self.zero_init = zero_init
 
         self.batch_size = batch_size if self.sgd else len(self.training_set)
 

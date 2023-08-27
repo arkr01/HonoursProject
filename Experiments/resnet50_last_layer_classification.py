@@ -15,7 +15,7 @@ from networks import *
 if __name__ == '__main__':
     # Set up data loaders, set hyperparameters, etc.
     experiment = Workflow(cifar10_training_subset, cifar10_test_subset, lr=0.01, grad_norm_tol=-1, num_epochs=200,
-                          sgd=False, lbfgs=True, subset=True)
+                          sgd=False, lbfgs=True, subset=True, zero_init=True)
     num_classes = 10
     print(experiment.lr)
 
@@ -47,6 +47,9 @@ if __name__ == '__main__':
     for name, param in resnet50_last_layer_model.named_parameters():
         if 'fc' not in name and 'avgpool' not in name:
             param.requires_grad = False
+        # Initialise parameters to 0 if required
+        elif experiment.zero_init:
+            param.detach().zero_()
 
     resnet50_last_layer_model_name = f"{resnet50_last_layer_model=}".split('=')[0]  # Gives name of model variable!
     print(resnet50_last_layer_model)
