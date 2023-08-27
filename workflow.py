@@ -90,8 +90,12 @@ class Workflow:
             lg_unreg = training_set_spectral_norm_sq * (0.25 if not self.least_sq else 1)
             self.lr = 1 / (lg_unreg + self.l2_val)
 
+        # Ensure only one optimiser is selected
         self.sgd = sgd
         self.lbfgs = lbfgs
+        if self.sgd and self.lbfgs:
+            raise Exception("Incorrect Optimiser Selected")
+
         self.batch_size = batch_size if self.sgd else len(self.training_set)
 
         model_invex = "_invex" if self.compare_invex else ""
@@ -100,13 +104,14 @@ class Workflow:
         model_dropout = "_dropout" if self.compare_dropout else ""
         model_batch_norm = "_batch_norm" if self.compare_batch_norm else ""
         model_data_aug = "_data_aug" if self.compare_data_aug else ""
-        model_gd = "_gd" if not self.sgd else ""
+        model_optim = "_gd" if not self.sgd and not self.lbfgs else ("_lbfgs" if self.lbfgs else "")
+        model_subset = f"_subset_n={len(training_set)}" if subset else ""
         model_lr = f"_lr{self.lr}" if lr is not None else ""
         model_invex_lambda = f"_lambda{invex_val}" if self.compare_invex else ""
         model_l2_lambda = f"_l2lambda{l2_val}" if self.compare_l2 else ""
 
         choices = model_invex + model_invex_ones + model_l2 + model_dropout + model_batch_norm + model_data_aug
-        choices += model_gd + model_lr + model_invex_lambda + model_l2_lambda
+        choices += model_optim + model_subset + model_lr + model_invex_lambda + model_l2_lambda
         self.model_config = "with" + choices if len(choices) else "unregularised"
 
         self.epochs_to_plot = torch.logspace(0, log10(self.num_epochs), 100).long().unique() - 1
