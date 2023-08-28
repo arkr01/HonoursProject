@@ -113,7 +113,7 @@ class Workflow:
 
         choices = model_invex + model_invex_ones + model_l2 + model_dropout + model_batch_norm + model_data_aug
         choices += model_zero_init + model_optim + model_subset + model_lr + model_invex_lambda + model_l2_lambda
-        self.model_config = "with" + choices if len(choices) else "unregularised"
+        self.model_config = "with" + choices if choices else "unregularised"
 
         self.epochs_to_plot = torch.logspace(0, log10(self.num_epochs), 100).long().unique() - 1
         self.avg_training_losses_to_plot = torch.zeros_like(self.epochs_to_plot, dtype=torch.float64).to(device)
@@ -320,13 +320,9 @@ class Workflow:
 
             mkdir(PLOTS_RESULTS_FOLDER + model_name + '/Train')
             mkdir(PLOTS_RESULTS_FOLDER + model_name + '/Train/Loss')
-            mkdir(PLOTS_RESULTS_FOLDER + model_name + '/Train/Objective')
-            mkdir(PLOTS_RESULTS_FOLDER + model_name + '/Train/Both')
 
             mkdir(PLOTS_RESULTS_FOLDER + model_name + '/Test')
             mkdir(PLOTS_RESULTS_FOLDER + model_name + '/Test/Loss')
-            mkdir(PLOTS_RESULTS_FOLDER + model_name + '/Test/Objective')
-            mkdir(PLOTS_RESULTS_FOLDER + model_name + '/Test/Both')
 
         # Save L2 gradient norm, avg train/test losses, parameters
         model_type_filename = f"{model_name}/{self.model_config}"

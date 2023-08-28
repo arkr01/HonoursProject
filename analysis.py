@@ -5,6 +5,7 @@
 """
 from matplotlib import rcParams
 import matplotlib.pyplot as plt
+from numpy import log10
 
 import torch
 
@@ -14,24 +15,28 @@ rcParams["text.usetex"] = True  # Allows LaTeX in titles/labels/legends
 
 # What experiment we're plotting
 model = "resnet50_last_layer_model"
-plot_title = "ResNet50 (Last Layer) Classification"
+plot_title = "ResNet50 (Last Layer) Classification (Zero Initialisation) (LBFGS)"
 lr = 0.01
 lambda_1 = 0.1
 lambda_2 = 0.01
 
-experiment_name = f"sgd_lr{lr}_lambda{lambda_1}_l2lambda{lambda_2}_all_individual"
+experiment_name = f"lbfgs_zero_lr{lr}_lambda{lambda_1}_l2lambda{lambda_2}_all_individual"
 standard_lr = experiment_name.__contains__("lrst")
 
 unreg_or_gd = "unregularised_" if experiment_name[0] == 's' and standard_lr else "with_"
-reg_or_gd = "" if experiment_name[0] == 's' else "gd_"
+zero_or_random = "zero_init_" if experiment_name.__contains__("zero") else ""
+reg_or_gd = "" if experiment_name[0] == 's' else ("lbfgs_" if experiment_name[0] == 'l' else "gd_")
+subset = "subset_n=100_" if reg_or_gd else ""
 lr_val = "" if standard_lr else f"lr{lr}_"
-config = reg_or_gd + lr_val
+
+config = zero_or_random + reg_or_gd + subset + lr_val
 unreg_config = unreg_or_gd + config
 
 if "wie" in LOSS_METRICS_FOLDER or "rgp" in LOSS_METRICS_FOLDER:
     experiment_name = "full_" + experiment_name
 
 epochs_to_plot = torch.load(LOSS_METRICS_FOLDER + f'{model}/epochs_to_plot.pth').to('cpu')
+# epochs_to_plot = torch.logspace(0, log10(200), 100).long().unique() - 1
 
 # Train/Test Losses
 unreg_train_loss = torch.load(LOSS_METRICS_FOLDER + f'{model}/Train/{unreg_config}loss.pth').to('cpu')
@@ -71,13 +76,13 @@ batch_norm_test_loss = (torch.load(LOSS_METRICS_FOLDER + f'{model}/Test/with_bat
 with torch.no_grad():
     # Plot train/test losses for different models
     plt.figure()
-    plt.plot(epochs_to_plot, unreg_train_loss, 'k', ls=(0, (1, 1)))  # dotted
-    plt.plot(epochs_to_plot, invex_train_loss, 'r', ls=(0, (5, 1)))  # densely dashed
-    plt.plot(epochs_to_plot, invex_ones_train_loss, 'gx', ls=(0, (5, 5)))  # dashed
-    plt.plot(epochs_to_plot, l2_train_loss, 'b', ls=(0, (5, 10)))  # loosely dashed
-    plt.plot(epochs_to_plot, data_aug_train_loss, 'c', ls=(0, (3, 1, 1, 1)))  # densely dash dotted
-    plt.plot(epochs_to_plot, dropout_train_loss, 'm', ls=(0, (3, 5, 1, 5)))  # dash dotted
-    plt.plot(epochs_to_plot, batch_norm_train_loss, 'y', ls=(0, (3, 10, 1, 10)))  # loosely dash dotted
+    plt.semilogx(epochs_to_plot, unreg_train_loss, 'k', ls=(0, (1, 1)))  # dotted
+    plt.semilogx(epochs_to_plot, invex_train_loss, 'r', ls=(0, (5, 1)))  # densely dashed
+    plt.semilogx(epochs_to_plot, invex_ones_train_loss, 'gx')  # x
+    plt.semilogx(epochs_to_plot, l2_train_loss, 'b', ls=(0, (5, 10)))  # loosely dashed
+    plt.semilogx(epochs_to_plot, data_aug_train_loss, 'c', ls=(0, (3, 1, 1, 1)))  # densely dash dotted
+    plt.semilogx(epochs_to_plot, dropout_train_loss, 'm', ls=(0, (3, 5, 1, 5)))  # dash dotted
+    plt.semilogx(epochs_to_plot, batch_norm_train_loss, 'y', ls=(0, (3, 10, 1, 10)))  # loosely dash dotted
     plt.legend(['Unregularised', 'Invex', 'Invex Scalar', r'$\ell_2$', 'Data Augmentation', 'Dropout',
                 'Batch Normalisation'])
     plt.xlabel('Epochs')
@@ -87,13 +92,13 @@ with torch.no_grad():
     # plt.savefig(PLOTS_RESULTS_FOLDER + f'{model}/Train/Loss/{experiment_name}.eps')
 
     plt.figure()
-    plt.plot(epochs_to_plot, unreg_test_loss, 'k', ls=(0, (1, 1)))  # dotted
-    plt.plot(epochs_to_plot, invex_test_loss, 'r', ls=(0, (5, 1)))  # densely dashed
-    plt.plot(epochs_to_plot, invex_ones_test_loss, 'gx', ls=(0, (5, 5)))  # dashed
-    plt.plot(epochs_to_plot, l2_test_loss, 'b', ls=(0, (5, 10)))  # loosely dashed
-    plt.plot(epochs_to_plot, data_aug_test_loss, 'c', ls=(0, (3, 1, 1, 1)))  # densely dash dotted
-    plt.plot(epochs_to_plot, dropout_test_loss, 'm', ls=(0, (3, 5, 1, 5)))  # dash dotted
-    plt.plot(epochs_to_plot, batch_norm_test_loss, 'y', ls=(0, (3, 10, 1, 10)))  # loosely dash dotted
+    plt.semilogx(epochs_to_plot, unreg_test_loss, 'k', ls=(0, (1, 1)))  # dotted
+    plt.semilogx(epochs_to_plot, invex_test_loss, 'r', ls=(0, (5, 1)))  # densely dashed
+    plt.semilogx(epochs_to_plot, invex_ones_test_loss, 'gx')  # x
+    plt.semilogx(epochs_to_plot, l2_test_loss, 'b', ls=(0, (5, 10)))  # loosely dashed
+    plt.semilogx(epochs_to_plot, data_aug_test_loss, 'c', ls=(0, (3, 1, 1, 1)))  # densely dash dotted
+    plt.semilogx(epochs_to_plot, dropout_test_loss, 'm', ls=(0, (3, 5, 1, 5)))  # dash dotted
+    plt.semilogx(epochs_to_plot, batch_norm_test_loss, 'y', ls=(0, (3, 10, 1, 10)))  # loosely dash dotted
     plt.legend(['Unregularised', 'Invex', 'Invex Scalar', r'$\ell_2$', 'Data Augmentation', 'Dropout',
                 'Batch Normalisation'])
     plt.xlabel('Epochs')
@@ -104,13 +109,13 @@ with torch.no_grad():
 
     # Plot infinity gradient norm convergence for different models
     # plt.figure()
-    # plt.plot(epochs_to_plot, unreg_grad_norm, 'k', ls=(0, (1, 1)))  # dotted
-    # plt.plot(epochs_to_plot, invex_grad_norm, 'r', ls=(0, (5, 1)))  # densely dashed
-    # plt.plot(epochs_to_plot, invex_ones_grad_norm, 'g', ls=(0, (5, 5)))  # dashed
-    # plt.plot(epochs_to_plot, l2_grad_norm, 'b', ls=(0, (5, 10)))  # loosely dashed
-    # plt.plot(epochs_to_plot, data_aug_grad_norm, 'c', ls=(0, (3, 1, 1, 1)))  # densely dash dotted
-    # plt.plot(epochs_to_plot, dropout_grad_norm, 'm', ls=(0, (3, 5, 1, 5)))  # dash dotted
-    # plt.plot(epochs_to_plot, batch_norm_grad_norm, 'y', ls=(0, (3, 10, 1, 10)))  # loosely dash dotted
+    # plt.semilogx(epochs_to_plot, unreg_grad_norm, 'k', ls=(0, (1, 1)))  # dotted
+    # plt.semilogx(epochs_to_plot, invex_grad_norm, 'r', ls=(0, (5, 1)))  # densely dashed
+    # plt.semilogx(epochs_to_plot, invex_ones_grad_norm, 'g', ls=(0, (5, 5)))  # dashed
+    # plt.semilogx(epochs_to_plot, l2_grad_norm, 'b', ls=(0, (5, 10)))  # loosely dashed
+    # plt.semilogx(epochs_to_plot, data_aug_grad_norm, 'c', ls=(0, (3, 1, 1, 1)))  # densely dash dotted
+    # plt.semilogx(epochs_to_plot, dropout_grad_norm, 'm', ls=(0, (3, 5, 1, 5)))  # dash dotted
+    # plt.semilogx(epochs_to_plot, batch_norm_grad_norm, 'y', ls=(0, (3, 10, 1, 10)))  # loosely dash dotted
     # plt.legend(['Unregularised', 'Invex', 'Invex Scalar', r'$\ell_2$', 'Data Augmentation', 'Dropout',
     #             'Batch Normalisation'])
     # plt.xlabel('Epochs')
