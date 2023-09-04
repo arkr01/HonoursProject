@@ -118,6 +118,8 @@ class Workflow:
         self.epochs_to_plot = torch.logspace(0, log10(self.num_epochs), 100).long().unique() - 1
         self.avg_training_losses_to_plot = torch.zeros_like(self.epochs_to_plot, dtype=torch.float64).to(device)
         self.avg_test_losses_to_plot = torch.zeros_like(self.epochs_to_plot, dtype=torch.float64).to(device)
+        self.avg_training_accuracies_to_plot = torch.zeros_like(self.epochs_to_plot, dtype=torch.float64).to(device)
+        self.avg_test_accuracies_to_plot = torch.zeros_like(self.epochs_to_plot, dtype=torch.float64).to(device)
         self.grad_l_inf_norm_to_plot = torch.zeros_like(self.epochs_to_plot, dtype=torch.float64).to(device)
         self.plot_idx = 0
 
@@ -148,15 +150,16 @@ class Workflow:
             if self.lbfgs:
                 # closure() may run several times per epoch, ensure to only calculate accuracy once
                 num_closure = 0
+
                 def closure():
                     nonlocal targets, loss, correct, num_closure
-                    prediction = model(examples)
+                    prediction_ = model(examples)
                     if self.binary_log_reg:
                         targets = targets.unsqueeze(1).to(dtype=torch.float64)
-                        prediction = torch.clamp(prediction, min=0.0, max=1.0)  # For numerical issues
-                    loss, obj = self.calculate_loss_and_objective(model, prediction, examples, targets, loss_fn)
+                        prediction_ = torch.clamp(prediction_, min=0.0, max=1.0)  # For numerical issues
+                    loss, obj = self.calculate_loss_and_objective(model, prediction_, examples, targets, loss_fn)
                     if not self.reconstruction and not self.least_sq:
-                        pred = prediction.argmax(1) if not self.binary_log_reg else prediction.round()
+                        pred = prediction_.argmax(1) if not self.binary_log_reg else prediction_.round()
                         num_closure += 1
                         if num_closure == 1:
                             correct += (pred == targets).type(torch.float).sum().item()
@@ -165,6 +168,7 @@ class Workflow:
                     optimiser.zero_grad()
                     obj.backward()
                     return obj
+
                 optimiser.step(closure)
             else:
                 prediction = model(examples)
@@ -197,6 +201,7 @@ class Workflow:
 
         if epoch in self.epochs_to_plot:
             self.avg_training_losses_to_plot[self.plot_idx] = avg_loss
+            self.avg_training_accuracies_to_plot[self.plot_idx] = correct
 
         # Minor code optimisation - don't bother calculating gradient convergence if we set a negative tolerance
         if self.grad_norm_tol >= 0 and self.check_grad_convergence(model, epoch):
@@ -228,7 +233,7 @@ class Workflow:
         test_batches = len(self.test_loader)
         num_examples = len(self.test_loader.dataset)
         model.eval()
-        test_loss = test_objective = correct = 0
+        test_loss = correct = 0
         with torch.no_grad():
             for examples, targets in self.test_loader:
                 examples, targets = examples.to(device), targets.to(device)
@@ -236,19 +241,18 @@ class Workflow:
                 if self.binary_log_reg:
                     targets = targets.unsqueeze(1).to(dtype=torch.float64)
                     prediction = torch.clamp(prediction, min=0.0, max=1.0)  # For numerical issues
-                loss, objective = self.calculate_loss_and_objective(model, prediction, examples, targets, loss_fn)
+                loss, _ = self.calculate_loss_and_objective(model, prediction, examples, targets, loss_fn)
                 test_loss += loss.item()
-                test_objective += objective.item()
                 if not self.reconstruction and not self.least_sq:
                     predicted = prediction.argmax(1) if not self.binary_log_reg else prediction.round()
                     correct += (predicted == targets).type(torch.float).sum().item()
         test_loss /= test_batches
-        test_objective /= test_batches
         correct /= num_examples
 
         # Save test loss (only update plot_idx here as test is always called after train)
         if epoch in self.epochs_to_plot:
             self.avg_test_losses_to_plot[self.plot_idx] = test_loss
+            self.avg_test_accuracies_to_plot[self.plot_idx] = correct
             self.plot_idx += 1
 
         print(f"Test loss (avg): {test_loss:>8f}" + ("\n" if self.reconstruction else ""))
@@ -320,11 +324,13 @@ class Workflow:
 
             mkdir(PLOTS_RESULTS_FOLDER + model_name + '/Train')
             mkdir(PLOTS_RESULTS_FOLDER + model_name + '/Train/Loss')
+            mkdir(PLOTS_RESULTS_FOLDER + model_name + '/Train/Accuracy')
 
             mkdir(PLOTS_RESULTS_FOLDER + model_name + '/Test')
             mkdir(PLOTS_RESULTS_FOLDER + model_name + '/Test/Loss')
+            mkdir(PLOTS_RESULTS_FOLDER + model_name + '/Test/Accuracy')
 
-        # Save L2 gradient norm, avg train/test losses, parameters
+        # Save infinity gradient norm, avg train/test losses/accuracies, parameters
         model_type_filename = f"{model_name}/{self.model_config}"
 
         torch.save(self.epochs_to_plot, f"{LOSS_METRICS_FOLDER}{model_name}/epochs_to_plot.pth")
@@ -334,6 +340,10 @@ class Workflow:
                    f"{LOSS_METRICS_FOLDER}{model_name}/Train/{self.model_config}_loss.pth")
         torch.save(self.avg_test_losses_to_plot,
                    f"{LOSS_METRICS_FOLDER}{model_name}/Test/{self.model_config}_loss.pth")
+        torch.save(self.avg_training_accuracies_to_plot,
+                   f"{LOSS_METRICS_FOLDER}{model_name}/Train/{self.model_config}_acc.pth")
+        torch.save(self.avg_test_accuracies_to_plot,
+                   f"{LOSS_METRICS_FOLDER}{model_name}/Test/{self.model_config}_acc.pth")
 
         # Get learned parameters (excluding p variables) and convert into single tensor - for comparison
         parameters = [parameter.detach().flatten() for parameter in model.parameters()]
