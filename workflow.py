@@ -124,6 +124,8 @@ class Workflow:
         self.avg_test_accuracies_to_plot = torch.zeros_like(self.epochs_to_plot, dtype=torch.float64).to(device)
         self.grad_l_inf_norm_to_plot = torch.zeros_like(self.epochs_to_plot, dtype=torch.float64).to(device)
         self.plot_idx = 0
+        self.num_converged = 0
+        self.converged_epoch = -1
 
         if self.compare_data_aug:
             augmentations = Compose([RandomHorizontalFlip(p=0.2), RandomVerticalFlip(p=0.1), RandomEqualize(p=0.1),
@@ -207,7 +209,12 @@ class Workflow:
 
         # Minor code optimisation - don't bother calculating gradient convergence if we set a negative tolerance
         if self.grad_norm_tol >= 0 and self.check_grad_convergence(model, epoch):
-            print(f"Training converged after {epoch} epochs.")
+            # Obtain and print epoch when gradient convergence was achieved
+            self.num_converged += 1
+            if self.num_converged == 1:
+                self.converged_epoch = epoch
+            if self.num_converged:
+                print(f"Training converged after {self.converged_epoch} epochs.")
 
             # Only return True (and stop training as a result) if we want
             return self.early_converge
