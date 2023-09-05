@@ -26,7 +26,7 @@ class Workflow:
                  invex_val=1e-1, invex_p_ones=False, compare_l2=False, l2_val=1e-2, compare_dropout=False,
                  dropout_val=0.5, compare_batch_norm=False, compare_data_aug=False, subset=False, reconstruction=False,
                  least_sq=False, binary_log_reg=False, synthetic=False, sgd=True, batch_size=64, lbfgs=False,
-                 zero_init=False, early_converge=False):
+                 zero_init=False, early_converge=False, save_parameters=False):
         """
         Set up necessary constants and variables for all experiments.
 
@@ -54,6 +54,7 @@ class Workflow:
         :param lbfgs: True if using LBFGS, False otherwise.
         :param zero_init: True for zero initialisation of parameters, False otherwise.
         :param early_converge: True if gradient norm meeting grad_norm_tol should stop training, False otherwise.
+        :param save_parameters: True if one wishes to save model parameters, False otherwise.
         """
         self.training_set = training_set
         self.test_set = test_set
@@ -97,6 +98,7 @@ class Workflow:
             raise Exception("Incorrect Optimiser Selected")
         self.zero_init = zero_init
         self.early_converge = early_converge
+        self.save_parameters = save_parameters
 
         self.batch_size = batch_size if self.sgd else len(self.training_set)
 
@@ -356,11 +358,15 @@ class Workflow:
         torch.save(self.avg_test_accuracies_to_plot,
                    f"{LOSS_METRICS_FOLDER}{model_name}/Test/{self.model_config}_acc.pth")
 
-        # Get learned parameters (excluding p variables) and convert into single tensor - for comparison
-        parameters = [parameter.detach().flatten() for parameter in model.parameters()]
+        if self.save_parameters:
+            # Get learned parameters (excluding p variables) and convert into single tensor - for comparison
+            parameters = [parameter.detach().flatten() for parameter in model.parameters()]
 
-        # Remove p variables if they exist
-        parameters_no_p = parameters[:-self.num_train_batches] if self.compare_invex else parameters
-        torch.save(torch.cat(parameters_no_p), f"{LOSS_METRICS_FOLDER}{model_type_filename}_parameters.pth")
+            # Remove p variables if they exist
+            parameters_no_p = parameters[:-self.num_train_batches] if self.compare_invex else parameters
+            torch.save(torch.cat(parameters_no_p), f"{LOSS_METRICS_FOLDER}{model_type_filename}_parameters.pth")
 
-        print(f"Saved PyTorch Model State and training losses for {model_type_filename}")
+        grad_config = ", gradient norm" if self.grad_norm_tol >= 0 else ""
+        param_config = ", and parameters" if self.save_parameters else ""
+        save_config = grad_config + param_config
+        print(f"Saved train/test metrics{save_config} for {model_type_filename}")
