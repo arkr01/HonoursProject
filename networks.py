@@ -181,7 +181,7 @@ class VAE(nn.Module):
 
 class ConvBlock(nn.Module):
     """
-    Convolutional Block as part of ResNet50.
+    Convolutional Block as part of ResNet.
     """
     def __init__(self, input_channels, output_channels, kernel, stride, padding, compare_batch_norm):
         super().__init__()
@@ -200,56 +200,89 @@ class ConvBlock(nn.Module):
 
 class ResidualBlock(nn.Module):
     """
-    Residual Block as part of ResNet50.
+    Residual Block as part of ResNet.
     """
-    def __init__(self, input_channels, output_channels, compare_batch_norm, first_layer=False):
+    def __init__(self, input_channels, output_channels, smaller_resnet, compare_batch_norm, first_block=False):
+        """
+        Constructor.
+
+        :param input_channels: number of input channels (for entire ResidualBlock)
+        :param output_channels: number of output channels (for entire ResidualBlock)
+        :param smaller_resnet: True if implementing ResNet18/34, False otherwise
+        :param compare_batch_norm: True if activating batch normalisation within ConvBlocks, False otherwise
+        :param first_block: True if this is the first ResidualBlock, False otherwise
+        """
         super().__init__()
-        residual_channels = input_channels // 4
+        self.smaller_resnet = smaller_resnet
+        residual_channels = input_channels if smaller_resnet else input_channels // 4
         stride = 1
         self.is_projection = input_channels != output_channels
 
-        if self.is_projection or first_layer:
-            stride += self.is_projection and not first_layer
+        if self.is_projection or first_block:
+            stride += self.is_projection and not first_block
             self.proj = ConvBlock(input_channels, output_channels, 1, stride, 0, compare_batch_norm)
-            residual_channels = input_channels // stride
+            residual_channels = input_channels * stride if smaller_resnet else input_channels // stride
 
-        self.conv1 = ConvBlock(input_channels, residual_channels, 1, 1, 0, compare_batch_norm)
+        self.conv1 = ConvBlock(input_channels, residual_channels, 3 if self.smaller_resnet else 1, 1,
+                               1 if self.smaller_resnet else 0, compare_batch_norm)
         self.conv2 = ConvBlock(residual_channels, residual_channels, 3, stride, 1, compare_batch_norm)
-        self.conv3 = ConvBlock(residual_channels, output_channels, 1, 1, 0, compare_batch_norm)
+        if not smaller_resnet:
+            self.conv3 = ConvBlock(residual_channels, output_channels, 1, 1, 0, compare_batch_norm)
         self.relu = nn.ReLU()
 
     def forward(self, x):
         activation = self.relu(self.conv1(x))
-        activation = self.relu(self.conv2(activation))
-        activation = self.conv3(activation)
 
+        # ReLU must be activated only *after* adding skip connection to final ConvBlock output
+        activation = self.conv2(activation)
+        if not self.smaller_resnet:
+            activation = self.relu(activation)
+            activation = self.conv3(activation)
         if self.is_projection:
-            x = self.proj(x)
+            x = self.proj(x)  # Dimension matching
         return self.relu(torch.add(activation, x))
 
 
-class ResNet50(nn.Module):
+class ResNet(nn.Module):
     """
-    Implements ResNet50.
+    Implements a general ResNet. Dimension constants (e.g. num_blocks, output_features, etc.) specified by original
+    paper: https://arxiv.org/abs/1512.03385
     """
-    def __init__(self, compare_batch_norm, compare_dropout, dropout_param=0.5, input_channels=3, num_classes=1000):
+    def __init__(self, variant, compare_batch_norm, compare_dropout, dropout_param=0.5, input_channels=3,
+                 num_classes=1000):
         super().__init__()
-        num_blocks = [3, 4, 6, 3]
-        output_features = [256, 512, 1024, 2048]
-        self.res_blocks = nn.ModuleList([ResidualBlock(64, 256, compare_batch_norm, True)])
+        # ResNet18/34 have a shared ResidualBlock architecture, which differs from ResNet50/101/152 - must specify
+        smaller_resnet = variant < 50
 
+        # Number of ResidualBlocks before each downsample (specified by ResNet variant)
+        if variant == 18:
+            num_blocks = [2, 2, 2, 2]
+        elif variant == 34 or variant == 50:
+            num_blocks = [3, 4, 6, 3]
+        elif variant == 101:
+            num_blocks = [3, 4, 23, 3]
+        elif variant == 152:
+            num_blocks = [3, 8, 36, 3]
+        else:
+            raise Exception("Invalid ResNet variant")
+        output_features = [64, 128, 256, 512] if smaller_resnet else [256, 512, 1024, 2048]
+
+        # Define ResidualBlocks (and ConvBlocks within ResidualBlocks) as per Table 1 from ResNet paper (see docstring)
+        self.res_blocks = nn.ModuleList([ResidualBlock(64, output_features[0], smaller_resnet, compare_batch_norm,
+                                                       True)])
         for i in range(len(output_features)):
             if i > 0:
-                self.res_blocks.append(ResidualBlock(output_features[i - 1], output_features[i], compare_batch_norm))
+                self.res_blocks.append(ResidualBlock(output_features[i - 1], output_features[i], smaller_resnet,
+                                                     compare_batch_norm))
             for _ in range(num_blocks[i] - 1):
-                self.res_blocks.append(ResidualBlock(output_features[i], output_features[i], compare_batch_norm))
+                self.res_blocks.append(ResidualBlock(output_features[i], output_features[i], smaller_resnet,
+                                                     compare_batch_norm))
 
         self.conv1 = ConvBlock(input_channels, 64, 7, 2, 3, compare_batch_norm)
         self.max_pool = nn.MaxPool2d(kernel_size=3, stride=2, padding=1)
         self.avg_pool = nn.AdaptiveAvgPool2d((1, 1))
-        self.linear = nn.Linear(2048, num_classes)
+        self.linear = nn.Linear(output_features[-1], num_classes)
         self.relu = nn.ReLU()
-        self.softmax = nn.Softmax(dim=1)
         self.compare_dropout = compare_dropout
         if self.compare_dropout:
             self.dropout = nn.Dropout(p=dropout_param)

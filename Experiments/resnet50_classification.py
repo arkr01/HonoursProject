@@ -11,12 +11,12 @@ from networks import *
 
 if __name__ == '__main__':
     # Set up data loaders, set hyperparameters, etc.
-    experiment = Workflow(cifar10_training_data, cifar10_test_data, lr=5e-4, num_epochs=200)
+    experiment = Workflow(cifar10_training_data, cifar10_test_data, lr=5e-5, num_epochs=200)
     print(experiment.lr)
 
     # Define model and loss function/optimiser
-    resnet50_model = ResNet50(experiment.compare_batch_norm, experiment.compare_dropout, experiment.dropout_param,
-                              num_classes=10).to(dtype=torch.float64)
+    resnet50_model = ResNet(50, experiment.compare_batch_norm, experiment.compare_dropout, experiment.dropout_param,
+                            num_classes=10).to(dtype=torch.float64)
     resnet50_model_name = f"{resnet50_model=}".split('=')[0]  # Gives name of model variable!
     print(resnet50_model)
 
