@@ -366,12 +366,12 @@ class Workflow:
 
             mkdir(PLOTS_RESULTS_FOLDER + model_name + '/Train')
             mkdir(PLOTS_RESULTS_FOLDER + model_name + '/Train/Loss')
-            mkdir(PLOTS_RESULTS_FOLDER + model_name + '/Train/Accuracy')
 
             mkdir(PLOTS_RESULTS_FOLDER + model_name + '/Test')
             mkdir(PLOTS_RESULTS_FOLDER + model_name + '/Test/Loss')
-            mkdir(PLOTS_RESULTS_FOLDER + model_name + '/Test/Accuracy')
-
+            if not self.least_sq and not self.reconstruction and not self.diffusion:
+                mkdir(PLOTS_RESULTS_FOLDER + model_name + '/Train/Accuracy')
+                mkdir(PLOTS_RESULTS_FOLDER + model_name + '/Test/Accuracy')
             if self.diffusion:
                 mkdir(PLOTS_RESULTS_FOLDER + model_name + '/Test/SampleImages')
 
@@ -405,7 +405,7 @@ class Workflow:
             grid = make_grid(sampled_images)
             arr = grid.permute(1, 2, 0).to('cpu').numpy()
             im = Image.fromarray(arr)
-            im.save(f"{LOSS_METRICS_FOLDER}{model_name}/Test/SampleImages/{self.model_config}.jpg")
+            im.save(f"{PLOTS_RESULTS_FOLDER}{model_name}/Test/SampleImages/{self.model_config}.jpg")
 
         grad_config = ", gradient norm" if self.grad_norm_tol >= 0 else ""
         param_config = ", and parameters" if self.save_parameters else ""
