@@ -409,34 +409,51 @@ class SelfAttention(nn.Module):
 
 
 class DoubleConv(nn.Module):
-    def __init__(self, in_channels, out_channels, mid_channels=None, residual=False):
+    def __init__(self, in_channels, out_channels, mid_channels=None, residual=False, compare_dropout=False,
+                 dropout_param=0.5, compare_batch_norm=False):
         super().__init__()
         self.residual = residual
         self.gelu = nn.GELU()
         if not mid_channels:
             mid_channels = out_channels
-        self.double_conv = nn.Sequential(
+        self.compare_dropout = compare_dropout
+        self.compare_batch_norm = compare_batch_norm
+        if self.compare_dropout:
+            self.dropout = nn.Dropout(p=dropout_param)
+        if self.compare_batch_norm:
+            self.batch_norm = nn.BatchNorm2d(num_features=mid_channels)
+        self.first_conv = nn.Sequential(
             nn.Conv2d(in_channels, mid_channels, kernel_size=3, padding=1, bias=False),
             nn.GroupNorm(1, mid_channels),
             nn.GELU(),
+        )
+        self.second_conv = nn.Sequential(
             nn.Conv2d(mid_channels, out_channels, kernel_size=3, padding=1, bias=False),
             nn.GroupNorm(1, out_channels),
         )
 
     def forward(self, x):
+        x = self.first_conv(x)
+        if self.compare_dropout:
+            x = self.dropout(x)
+        if self.compare_batch_norm:
+            x = self.batch_norm(x)
         if self.residual:
-            return self.gelu(x + self.double_conv(x))
+            return self.gelu(x + self.second_conv(x))
         else:
-            return self.double_conv(x)
+            return self.second_conv(x)
 
 
 class DownSample(nn.Module):
-    def __init__(self, num_input_channels, num_output_channels, embedding_dim=256):
+    def __init__(self, num_input_channels, num_output_channels, embedding_dim=256, compare_dropout=False,
+                 dropout_param=0.5, compare_batch_norm=False):
         super().__init__()
         self.maxpool_conv = nn.Sequential(
             nn.MaxPool2d(2),
-            DoubleConv(num_input_channels, num_input_channels, residual=True),
-            DoubleConv(num_input_channels, num_output_channels),
+            DoubleConv(num_input_channels, num_input_channels, residual=True, compare_dropout=compare_dropout,
+                       dropout_param=dropout_param, compare_batch_norm=compare_batch_norm),
+            DoubleConv(num_input_channels, num_output_channels, compare_dropout=compare_dropout,
+                       dropout_param=dropout_param, compare_batch_norm=compare_batch_norm),
         )
 
         self.emb_layer = nn.Sequential(
@@ -451,13 +468,17 @@ class DownSample(nn.Module):
 
 
 class UpSample(nn.Module):
-    def __init__(self, num_input_channels, num_output_channels, embedding_dim=256):
+    def __init__(self, num_input_channels, num_output_channels, embedding_dim=256, compare_dropout=False,
+                 dropout_param=0.5, compare_batch_norm=False):
         super().__init__()
 
         self.up = nn.Upsample(scale_factor=2, mode="bilinear", align_corners=True)
         self.conv = nn.Sequential(
-            DoubleConv(num_input_channels, num_input_channels, residual=True),
-            DoubleConv(num_input_channels, num_output_channels, num_input_channels // 2),
+            DoubleConv(num_input_channels, num_input_channels, residual=True, compare_dropout=compare_dropout,
+                       dropout_param=dropout_param, compare_batch_norm=compare_batch_norm),
+            DoubleConv(num_input_channels, num_output_channels, num_input_channels // 2,
+                       compare_dropout=compare_dropout, dropout_param=dropout_param,
+                       compare_batch_norm=compare_batch_norm),
         )
 
         self.emb_layer = nn.Sequential(
@@ -476,7 +497,8 @@ class UpSample(nn.Module):
 
 
 class UNet(nn.Module):
-    def __init__(self, input_dim, device, num_input_channels=3, num_output_channels=3, time_dim=256):
+    def __init__(self, input_dim, device, num_input_channels=3, num_output_channels=3, time_dim=256,
+                 compare_dropout=False, dropout_param=0.5, compare_batch_norm=False):
         super().__init__()
         self.input_dim = input_dim
         self.device = device
@@ -484,27 +506,37 @@ class UNet(nn.Module):
         self.num_output_channels = num_output_channels
         self.time_dim = time_dim
         
-        self.inc = DoubleConv(self.num_input_channels, 64)
+        self.inc = DoubleConv(self.num_input_channels, 64, compare_dropout=compare_dropout,
+                       dropout_param=dropout_param, compare_batch_norm=compare_batch_norm)
 
         # Encoder
-        self.down1 = DownSample(64, 128)
+        self.down1 = DownSample(64, 128, compare_dropout=compare_dropout,
+                       dropout_param=dropout_param, compare_batch_norm=compare_batch_norm)
         self.sa1 = SelfAttention(128, input_dim // 2)
-        self.down2 = DownSample(128, 256)
+        self.down2 = DownSample(128, 256, compare_dropout=compare_dropout,
+                       dropout_param=dropout_param, compare_batch_norm=compare_batch_norm)
         self.sa2 = SelfAttention(256, input_dim // 4)
-        self.down3 = DownSample(256, 256)
+        self.down3 = DownSample(256, 256, compare_dropout=compare_dropout,
+                       dropout_param=dropout_param, compare_batch_norm=compare_batch_norm)
         self.sa3 = SelfAttention(256, input_dim // 8)
 
         # Bottleneck
-        self.bottleneck1 = DoubleConv(256, 512)
-        self.bottleneck2 = DoubleConv(512, 512)
-        self.bottleneck3 = DoubleConv(512, 256)
+        self.bottleneck1 = DoubleConv(256, 512, compare_dropout=compare_dropout,
+                       dropout_param=dropout_param, compare_batch_norm=compare_batch_norm)
+        self.bottleneck2 = DoubleConv(512, 512, compare_dropout=compare_dropout,
+                       dropout_param=dropout_param, compare_batch_norm=compare_batch_norm)
+        self.bottleneck3 = DoubleConv(512, 256, compare_dropout=compare_dropout,
+                       dropout_param=dropout_param, compare_batch_norm=compare_batch_norm)
 
         # Decoder
-        self.up1 = UpSample(512, 128)
+        self.up1 = UpSample(512, 128, compare_dropout=compare_dropout,
+                       dropout_param=dropout_param, compare_batch_norm=compare_batch_norm)
         self.sa4 = SelfAttention(128, input_dim // 4)
-        self.up2 = UpSample(256, 64)
+        self.up2 = UpSample(256, 64, compare_dropout=compare_dropout,
+                       dropout_param=dropout_param, compare_batch_norm=compare_batch_norm)
         self.sa5 = SelfAttention(64, input_dim // 2)
-        self.up3 = UpSample(128, 64)
+        self.up3 = UpSample(128, 64, compare_dropout=compare_dropout,
+                       dropout_param=dropout_param, compare_batch_norm=compare_batch_norm)
         self.sa6 = SelfAttention(64, input_dim)
 
         # Output projection

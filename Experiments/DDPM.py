@@ -16,7 +16,9 @@ if __name__ == '__main__':
 
     # Define model and loss function/optimiser
     diffusion_setup = DiffusionSetup(input_dim=cifar_img_shape[1], device=device)
-    unet_model = UNet(input_dim=cifar_img_shape[1], device=device).to(dtype=torch.float64)
+    unet_model = UNet(input_dim=cifar_img_shape[1], device=device, compare_dropout=experiment.compare_dropout,
+                      dropout_param=experiment.dropout_param,
+                      compare_batch_norm=experiment.compare_batch_norm).to(dtype=torch.float64)
     print(unet_model)
 
     # Initialise parameters to 0 if needed
