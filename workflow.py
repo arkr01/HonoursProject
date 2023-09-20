@@ -222,7 +222,7 @@ class Workflow:
 
         # Print and save
         print(f"\nTrain loss (avg): {avg_loss:>8f}")
-        if not self.reconstruction and not self.least_sq:
+        if not self.reconstruction and not self.least_sq and not self.diffusion:
             print(f"Train Accuracy: {(100 * correct):>0.1f}%")
 
         if epoch in self.epochs_to_plot:
@@ -285,7 +285,7 @@ class Workflow:
                 loss, _ = self.calculate_loss_and_objective(model, prediction, examples,
                                                             targets if not self.diffusion else noise, loss_fn)
                 test_loss += loss.item()
-                if not self.reconstruction and not self.least_sq:
+                if not self.reconstruction and not self.least_sq and not self.diffusion:
                     predicted = prediction.argmax(1) if not self.binary_log_reg else prediction.round()
                     correct += (predicted == targets).type(torch.float).sum().item()
         test_loss /= test_batches
@@ -298,7 +298,7 @@ class Workflow:
             self.plot_idx += 1
 
         print(f"Test loss (avg): {test_loss:>8f}" + ("\n" if self.reconstruction else ""))
-        if not self.reconstruction:
+        if not self.reconstruction and not self.diffusion:
             print(f"Test Accuracy: {(100 * correct):>0.1f}%\n")
 
     def calculate_loss_and_objective(self, model, prediction, examples, targets, loss_fn):

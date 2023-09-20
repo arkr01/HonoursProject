@@ -466,7 +466,9 @@ class UpSample(nn.Module):
         )
 
     def forward(self, x, skip_x, t):
+        x = x.to('cpu')  # workaround for lack of deterministic implementation of Upsample
         x = self.up(x)
+        x = x.to('cuda')
         x = torch.cat([skip_x, x], dim=1)
         x = self.conv(x)
         emb = self.emb_layer(t)[:, :, None, None].repeat(1, 1, x.shape[-2], x.shape[-1])
