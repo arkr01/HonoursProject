@@ -18,6 +18,7 @@ class ModuleWrapper(nn.Module):
 
     This acts as a wrapper for any model to perform invex regularisation (https://arxiv.org/abs/2111.11027v1)
     """
+
     def __init__(self, module, lamda=0.0, p_ones=False, multi_output=False, log_out=False):
         super().__init__()
         self.module = module
@@ -45,8 +46,8 @@ class ModuleWrapper(nn.Module):
     def set_batch_idx(self, batch_idx):
         self.batch_idx = batch_idx
 
-    def forward(self, x):
-        x = self.module(x)
+    def forward(self, x, *args):
+        x = self.module(x, *args)
         if self.lamda != 0.0 and self.training:
             if self.multi_output:
                 updated_x = list(x)
@@ -70,6 +71,7 @@ class LinearLeastSquares(nn.Module):
     """
     Implements linear least squares regression
     """
+
     def __init__(self, input_dim):
         super().__init__()
         self.x = nn.Parameter(torch.zeros(input_dim), requires_grad=True)
@@ -82,6 +84,7 @@ class BinaryClassifier(nn.Module):
     """
     Implements a binary classifier
     """
+
     def __init__(self, input_dim):
         super().__init__()
         self.x = nn.Parameter(torch.zeros(input_dim), requires_grad=True)
@@ -94,6 +97,7 @@ class MultinomialLogisticRegression(nn.Module):
     """
     Implements multinomial logistic regression
     """
+
     def __init__(self, input_dim, num_classes):
         """
         Constructor
@@ -183,6 +187,7 @@ class ConvBlock(nn.Module):
     """
     Convolutional Block as part of ResNet.
     """
+
     def __init__(self, input_channels, output_channels, kernel, stride, padding, compare_batch_norm):
         super().__init__()
         self.conv = nn.Conv2d(in_channels=input_channels, out_channels=output_channels, kernel_size=kernel,
@@ -202,6 +207,7 @@ class ResidualBlock(nn.Module):
     """
     Residual Block as part of ResNet.
     """
+
     def __init__(self, input_channels, output_channels, smaller_resnet, compare_batch_norm, first_block=False):
         """
         Constructor.
@@ -248,6 +254,7 @@ class ResNet(nn.Module):
     Implements a general ResNet. Dimension constants (e.g. num_blocks, output_features, etc.) specified by original
     paper: https://arxiv.org/abs/1512.03385
     """
+
     def __init__(self, variant, compare_batch_norm, compare_dropout, dropout_param=0.5, input_channels=3,
                  num_classes=1000):
         super().__init__()
@@ -310,6 +317,7 @@ class ResNet50LastLayer(nn.Module):
     Implementation of regularisation techniques to modify last (hidden) layer, when training only the last (overall)
     layer of (pretrained) ResNet50.
     """
+
     def __init__(self, previous_layer_output_shape, compare_batch_norm, compare_dropout, dropout_param=0.5):
         super().__init__()
         self.compare_batch_norm = compare_batch_norm
@@ -329,3 +337,197 @@ class ResNet50LastLayer(nn.Module):
         if self.compare_dropout:
             out = self.dropout(out)
         return out
+
+
+class DiffusionSetup:
+    def __init__(self, input_dim, device, num_steps=1000, beta_start=1e-4, beta_end=0.02):
+        self.input_dim = input_dim
+        self.device = device
+        self.num_steps = num_steps
+        self.beta_start = beta_start
+        self.beta_end = beta_end
+
+        # Standard Linear scheduler as per original DDPM paper
+        self.beta = torch.linspace(self.beta_start, self.beta_end, self.num_steps).to(dtype=torch.float64)
+        self.beta = self.beta.to(self.device)
+        self.alpha = 1.0 - self.beta
+        self.alpha_hat = torch.cumprod(self.alpha, dim=0)
+
+    def sample_timestep(self, n):
+        return torch.randint(low=1, high=self.num_steps, size=(n,))
+
+    def forward_process(self, x, t):
+        sqrt_alpha_hat = torch.sqrt(self.alpha_hat[t])[:, None, None, None]
+        sqrt_one_minus_alpha_hat = torch.sqrt(1 - self.alpha_hat[t])[:, None, None, None]
+        epsilon = torch.randn_like(x)
+        return sqrt_alpha_hat * x + sqrt_one_minus_alpha_hat * epsilon, epsilon
+
+    def sample(self, model, n):
+        model.eval()
+        with torch.no_grad():
+            x = torch.randn((n, 3, self.input_dim, self.input_dim)).to(self.device)
+            for i in reversed(range(1, self.num_steps)):
+                t = (torch.ones(n) * i).long().to(self.device)
+                pred_noise = model(x, t)
+                alpha = self.alpha[t][:, None, None, None]
+                alpha_hat = self.alpha_hat[t][:, None, None, None]
+                beta = self.beta[t][:, None, None, None]
+                noise = torch.zeros_like(x)  # don't add noise to final iteration
+                if i > 1:
+                    noise = torch.randn_like(x)
+                x = 1 / torch.sqrt(alpha) * (x - ((1 - alpha) / (torch.sqrt(1 - alpha_hat))) * pred_noise) + \
+                    torch.sqrt(beta) * noise
+        model.train()
+
+        # Clip to correct pixel range
+        x = (x.clamp(-1, 1) + 1) / 2
+        x = (x * 255).type(torch.uint8)
+        return x
+
+
+class SelfAttention(nn.Module):
+    def __init__(self, num_channels, size):
+        super(SelfAttention, self).__init__()
+        self.num_channels = num_channels
+        self.size = size
+        self.mha = nn.MultiheadAttention(self.num_channels, 4, batch_first=True)
+        self.layer_norm = nn.LayerNorm([self.num_channels])
+        self.feed_forward = nn.Sequential(
+            nn.LayerNorm([self.num_channels]),
+            nn.Linear(self.num_channels, self.num_channels),
+            nn.GELU(),
+            nn.Linear(self.num_channels, self.num_channels),
+        )
+
+    def forward(self, x):
+        x = x.view(-1, self.num_channels, self.size * self.size).swapaxes(1, 2)
+        x_ln = self.layer_norm(x)
+        attention_value, _ = self.mha(x_ln, x_ln, x_ln)
+        attention_value = attention_value + x
+        attention_value = self.feed_forward(attention_value) + attention_value
+        return attention_value.swapaxes(2, 1).view(-1, self.num_channels, self.size, self.size)
+
+
+class DoubleConv(nn.Module):
+    def __init__(self, in_channels, out_channels, mid_channels=None, residual=False):
+        super().__init__()
+        self.residual = residual
+        self.gelu = nn.GELU()
+        if not mid_channels:
+            mid_channels = out_channels
+        self.double_conv = nn.Sequential(
+            nn.Conv2d(in_channels, mid_channels, kernel_size=3, padding=1, bias=False),
+            nn.GroupNorm(1, mid_channels),
+            nn.GELU(),
+            nn.Conv2d(mid_channels, out_channels, kernel_size=3, padding=1, bias=False),
+            nn.GroupNorm(1, out_channels),
+        )
+
+    def forward(self, x):
+        if self.residual:
+            return self.gelu(x + self.double_conv(x))
+        else:
+            return self.double_conv(x)
+
+
+class DownSample(nn.Module):
+    def __init__(self, num_input_channels, num_output_channels, embedding_dim=256):
+        super().__init__()
+        self.maxpool_conv = nn.Sequential(
+            nn.MaxPool2d(2),
+            DoubleConv(num_input_channels, num_input_channels, residual=True),
+            DoubleConv(num_input_channels, num_output_channels),
+        )
+
+        self.emb_layer = nn.Sequential(
+            nn.SiLU(),
+            nn.Linear(embedding_dim, num_output_channels),
+        )
+
+    def forward(self, x, t):
+        x = self.maxpool_conv(x)
+        emb = self.emb_layer(t)[:, :, None, None].repeat(1, 1, x.shape[-2], x.shape[-1])
+        return x + emb
+
+
+class UpSample(nn.Module):
+    def __init__(self, num_input_channels, num_output_channels, embedding_dim=256):
+        super().__init__()
+
+        self.up = nn.Upsample(scale_factor=2, mode="bilinear", align_corners=True)
+        self.conv = nn.Sequential(
+            DoubleConv(num_input_channels, num_input_channels, residual=True),
+            DoubleConv(num_input_channels, num_output_channels, num_input_channels // 2),
+        )
+
+        self.emb_layer = nn.Sequential(
+            nn.SiLU(),
+            nn.Linear(embedding_dim, num_output_channels),
+        )
+
+    def forward(self, x, skip_x, t):
+        x = self.up(x)
+        x = torch.cat([skip_x, x], dim=1)
+        x = self.conv(x)
+        emb = self.emb_layer(t)[:, :, None, None].repeat(1, 1, x.shape[-2], x.shape[-1])
+        return x + emb
+
+
+class UNet(nn.Module):
+    def __init__(self, input_dim, device, num_input_channels=3, num_output_channels=3, time_dim=256):
+        super().__init__()
+        self.input_dim = input_dim
+        self.device = device
+        self.num_input_channels = num_input_channels
+        self.num_output_channels = num_output_channels
+        self.time_dim = time_dim
+        
+        self.inc = DoubleConv(self.num_input_channels, 64)
+
+        # Encoder
+        self.down1 = DownSample(64, 128)
+        self.sa1 = SelfAttention(128, input_dim // 2)
+        self.down2 = DownSample(128, 256)
+        self.sa2 = SelfAttention(256, input_dim // 4)
+        self.down3 = DownSample(256, 256)
+        self.sa3 = SelfAttention(256, input_dim // 8)
+
+        # Bottleneck
+        self.bottleneck1 = DoubleConv(256, 512)
+        self.bottleneck2 = DoubleConv(512, 512)
+        self.bottleneck3 = DoubleConv(512, 256)
+
+        # Decoder
+        self.up1 = UpSample(512, 128)
+        self.sa4 = SelfAttention(128, input_dim // 4)
+        self.up2 = UpSample(256, 64)
+        self.sa5 = SelfAttention(64, input_dim // 2)
+        self.up3 = UpSample(128, 64)
+        self.sa6 = SelfAttention(64, input_dim)
+
+        # Output projection
+        self.out_conv = nn.Conv2d(64, self.num_output_channels, kernel_size=1)
+
+    def sinusoidal_encoding(self, t, channels):
+        inv_freq = 1.0 / (10000 ** (torch.arange(0, channels, 2, device=self.device).double() / channels))
+        positional_encoding_a = torch.sin(t.repeat(1, channels // 2) * inv_freq)
+        positional_encoding_b = torch.cos(t.repeat(1, channels // 2) * inv_freq)
+        positional_encoding = torch.cat([positional_encoding_a, positional_encoding_b], dim=-1)
+        return positional_encoding
+
+    def forward(self, x, t):
+        t = t.unsqueeze(-1).type(torch.float64)
+        t = self.sinusoidal_encoding(t, self.time_dim)
+
+        x1 = self.inc(x)
+        x2 = self.sa1(self.down1(x1, t))
+        x3 = self.sa2(self.down2(x2, t))
+        x4 = self.sa3(self.down3(x3, t))
+
+        x4 = self.bottleneck3(self.bottleneck2(self.bottleneck1(x4)))
+
+        x = self.sa4(self.up1(x4, x3, t))
+        x = self.sa5(self.up2(x, x2, t))
+        x = self.sa6(self.up3(x, x1, t))
+
+        return self.out_conv(x)

@@ -6,10 +6,12 @@
 from os import mkdir
 from os.path import exists
 from math import inf
+from PIL import Image
 
 from numpy import log10
 from torch.utils.data import DataLoader
 from torchvision.transforms import RandomHorizontalFlip, RandomVerticalFlip, RandomEqualize, RandomInvert
+from torchvision.utils import make_grid
 
 from datasets import *
 
@@ -25,8 +27,8 @@ class Workflow:
     def __init__(self, training_set, test_set, num_epochs=int(1e6), grad_norm_tol=1e-16, lr=None, compare_invex=False,
                  invex_val=1e-1, invex_p_ones=False, compare_l2=False, l2_val=1e-2, compare_dropout=False,
                  dropout_val=0.5, compare_batch_norm=False, compare_data_aug=False, subset=False, reconstruction=False,
-                 least_sq=False, binary_log_reg=False, synthetic=False, sgd=True, batch_size=64, lbfgs=False,
-                 zero_init=False, early_converge=False, save_parameters=False):
+                 diffusion=False, least_sq=False, binary_log_reg=False, synthetic=False, sgd=True, batch_size=64,
+                 lbfgs=False, zero_init=False, early_converge=False, save_parameters=False):
         """
         Set up necessary constants and variables for all experiments.
 
@@ -46,6 +48,7 @@ class Workflow:
         :param compare_data_aug: True if comparing data augmentation, False otherwise
         :param subset: True if using Subset class for dataset, False otherwise (for data augmentation)
         :param reconstruction: True if performing reconstruction, False otherwise
+        :param diffusion: True if performing diffusion, False otherwise
         :param least_sq: True if performing linear least squares regression, False otherwise
         :param binary_log_reg: True if performing binary logistic regression, False otherwise
         :param synthetic: True if using synthetic data, False otherwise
@@ -78,6 +81,7 @@ class Workflow:
         self.dropout_param = self.dropout_val * self.compare_dropout
 
         self.reconstruction = reconstruction
+        self.diffusion = diffusion
         self.least_sq = least_sq
         self.binary_log_reg = binary_log_reg
         self.synthetic = synthetic
@@ -142,10 +146,13 @@ class Workflow:
         self.num_train_batches = len(self.training_loader)
 
     def train(self, model, loss_fn, optimiser, epoch):
+        diffusion_setup = None
+        if self.diffusion:
+            model, diffusion_setup = model
         num_examples = len(self.training_loader.dataset)
         model.train()
 
-        total_loss = correct = 0
+        total_loss = correct = noise = 0
         print(f"Epoch {epoch + 1}\n-------------------------------")
         for batch, (examples, targets) in enumerate(self.training_loader):
             examples, targets = examples.to(device), targets.to(device)
@@ -159,12 +166,19 @@ class Workflow:
 
                 def closure():
                     nonlocal targets, loss, correct, num_closure
-                    prediction_ = model(examples)
+                    noise_ = 0
+                    if self.diffusion:
+                        t_ = diffusion_setup.sample_timestep(len(examples)).to(device)
+                        x_t_, noise_ = diffusion_setup.forward_process(examples, t_)
+                        prediction_ = model(x_t_, t_)
+                    else:
+                        prediction_ = model(examples)
                     if self.binary_log_reg:
                         targets = targets.unsqueeze(1).to(dtype=torch.float64)
                         prediction_ = torch.clamp(prediction_, min=0.0, max=1.0)  # For numerical issues
-                    loss, obj = self.calculate_loss_and_objective(model, prediction_, examples, targets, loss_fn)
-                    if not self.reconstruction and not self.least_sq:
+                    loss, obj = self.calculate_loss_and_objective(model, prediction_, examples,
+                                                                  targets if not self.diffusion else noise_, loss_fn)
+                    if not self.reconstruction and not self.least_sq and not self.diffusion:
                         pred = prediction_.argmax(1) if not self.binary_log_reg else prediction_.round()
                         num_closure += 1
                         if num_closure == 1:
@@ -177,12 +191,18 @@ class Workflow:
 
                 optimiser.step(closure)
             else:
-                prediction = model(examples)
+                if self.diffusion:
+                    t = diffusion_setup.sample_timestep(len(examples)).to(device)
+                    x_t, noise = diffusion_setup.forward_process(examples, t)
+                    prediction = model(x_t, t)
+                else:
+                    prediction = model(examples)
                 if self.binary_log_reg:
                     targets = targets.unsqueeze(1).to(dtype=torch.float64)
                     prediction = torch.clamp(prediction, min=0.0, max=1.0)  # For numerical issues
-                loss, objective = self.calculate_loss_and_objective(model, prediction, examples, targets, loss_fn)
-                if not self.reconstruction and not self.least_sq:
+                loss, objective = self.calculate_loss_and_objective(model, prediction, examples,
+                                                                    targets if not self.diffusion else noise, loss_fn)
+                if not self.reconstruction and not self.least_sq and not self.diffusion:
                     predicted = prediction.argmax(1) if not self.binary_log_reg else prediction.round()
                     correct += (predicted == targets).type(torch.float).sum().item()
 
@@ -243,6 +263,9 @@ class Workflow:
         return grad_norm <= self.grad_norm_tol
 
     def test(self, model, loss_fn, epoch):
+        diffusion_setup = None
+        if self.diffusion:
+            model, diffusion_setup = model
         test_batches = len(self.test_loader)
         num_examples = len(self.test_loader.dataset)
         model.eval()
@@ -250,11 +273,17 @@ class Workflow:
         with torch.no_grad():
             for examples, targets in self.test_loader:
                 examples, targets = examples.to(device), targets.to(device)
-                prediction = model(examples)
+                if self.diffusion:
+                    t = diffusion_setup.sample_timestep(len(examples)).to(device)
+                    x_t, noise = diffusion_setup.forward_process(examples, t)
+                    prediction = model(x_t, t)
+                else:
+                    prediction = model(examples)
                 if self.binary_log_reg:
                     targets = targets.unsqueeze(1).to(dtype=torch.float64)
                     prediction = torch.clamp(prediction, min=0.0, max=1.0)  # For numerical issues
-                loss, _ = self.calculate_loss_and_objective(model, prediction, examples, targets, loss_fn)
+                loss, _ = self.calculate_loss_and_objective(model, prediction, examples,
+                                                            targets if not self.diffusion else noise, loss_fn)
                 test_loss += loss.item()
                 if not self.reconstruction and not self.least_sq:
                     predicted = prediction.argmax(1) if not self.binary_log_reg else prediction.round()
@@ -343,6 +372,9 @@ class Workflow:
             mkdir(PLOTS_RESULTS_FOLDER + model_name + '/Test/Loss')
             mkdir(PLOTS_RESULTS_FOLDER + model_name + '/Test/Accuracy')
 
+            if self.diffusion:
+                mkdir(PLOTS_RESULTS_FOLDER + model_name + '/Test/SampleImages')
+
         # Save infinity gradient norm, avg train/test losses/accuracies, parameters
         model_type_filename = f"{model_name}/{self.model_config}"
 
@@ -365,6 +397,14 @@ class Workflow:
             # Remove p variables if they exist
             parameters_no_p = parameters[:-self.num_train_batches] if self.compare_invex else parameters
             torch.save(torch.cat(parameters_no_p), f"{LOSS_METRICS_FOLDER}{model_type_filename}_parameters.pth")
+        if self.diffusion:
+            # Generate and save images from trained DDPM
+            model, diffusion_setup = model
+            sampled_images = diffusion_setup.sample(model, n=self.batch_size)
+            grid = make_grid(sampled_images)
+            arr = grid.permute(1, 2, 0).to('cpu').numpy()
+            im = Image.fromarray(arr)
+            im.save(f"{LOSS_METRICS_FOLDER}{model_name}/Test/SampleImages/{self.model_config}.jpg")
 
         grad_config = ", gradient norm" if self.grad_norm_tol >= 0 else ""
         param_config = ", and parameters" if self.save_parameters else ""
