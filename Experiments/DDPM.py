@@ -26,7 +26,8 @@ if __name__ == '__main__':
         for _, param in unet_model.named_parameters():
             param.detach().zero_()
 
-    unet_model = ModuleWrapper(unet_model, lamda=experiment.invex_param, p_ones=experiment.invex_p_ones)
+    unet_model = ModuleWrapper(unet_model, lamda=experiment.invex_param, p_ones=experiment.invex_p_ones,
+                               diffusion=experiment.diffusion)
     unet_model.init_ps(train_dataloader=experiment.training_loader)
     unet_model = unet_model.to(device)
 

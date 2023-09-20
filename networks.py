@@ -19,7 +19,7 @@ class ModuleWrapper(nn.Module):
     This acts as a wrapper for any model to perform invex regularisation (https://arxiv.org/abs/2111.11027v1)
     """
 
-    def __init__(self, module, lamda=0.0, p_ones=False, multi_output=False, log_out=False):
+    def __init__(self, module, lamda=0.0, p_ones=False, multi_output=False, log_out=False, diffusion=False):
         super().__init__()
         self.module = module
         self.lamda = lamda
@@ -28,6 +28,7 @@ class ModuleWrapper(nn.Module):
         self.p_ones = p_ones
         self.multi_output = multi_output
         self.log_out = log_out
+        self.diffusion = diffusion
 
     def init_ps(self, train_dataloader):
         if self.lamda != 0.0:
@@ -37,7 +38,7 @@ class ModuleWrapper(nn.Module):
                 if self.p_ones:
                     p = torch.tensor([0.0])
                 else:
-                    outputs = self.module(inputs)
+                    outputs = inputs if self.diffusion else self.module(inputs)  # diffusion model preserves shape
                     p = torch.zeros_like(outputs[0] if self.multi_output else outputs)
                 ps.append(torch.nn.Parameter(p, requires_grad=True))
             self.ps = torch.nn.ParameterList(ps)
