@@ -26,7 +26,7 @@ class Workflow:
 
     def __init__(self, training_set, test_set, num_epochs=int(1e6), grad_norm_tol=1e-16, lr=None, compare_invex=False,
                  invex_val=1e-1, invex_p_ones=False, compare_l2=False, l2_val=1e-2, compare_dropout=False,
-                 dropout_val=0.5, compare_batch_norm=False, compare_data_aug=False, subset=False, reconstruction=False,
+                 dropout_val=0.2, compare_batch_norm=False, compare_data_aug=False, subset=False, reconstruction=False,
                  diffusion=False, least_sq=False, binary_log_reg=False, synthetic=False, sgd=True, batch_size=64,
                  lbfgs=False, zero_init=False, early_converge=False, save_parameters=False):
         """

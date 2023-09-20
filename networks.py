@@ -256,7 +256,7 @@ class ResNet(nn.Module):
     paper: https://arxiv.org/abs/1512.03385
     """
 
-    def __init__(self, variant, compare_batch_norm, compare_dropout, dropout_param=0.5, input_channels=3,
+    def __init__(self, variant, compare_batch_norm, compare_dropout, dropout_param=0.2, input_channels=3,
                  num_classes=1000):
         super().__init__()
         # ResNet18/34 have a shared ResidualBlock architecture, which differs from ResNet50/101/152 - must specify
@@ -319,7 +319,7 @@ class ResNet50LastLayer(nn.Module):
     layer of (pretrained) ResNet50.
     """
 
-    def __init__(self, previous_layer_output_shape, compare_batch_norm, compare_dropout, dropout_param=0.5):
+    def __init__(self, previous_layer_output_shape, compare_batch_norm, compare_dropout, dropout_param=0.2):
         super().__init__()
         self.compare_batch_norm = compare_batch_norm
         self.compare_dropout = compare_dropout
@@ -412,7 +412,7 @@ class SelfAttention(nn.Module):
 
 class DoubleConv(nn.Module):
     def __init__(self, in_channels, out_channels, mid_channels=None, residual=False, compare_dropout=False,
-                 dropout_param=0.5, compare_batch_norm=False):
+                 dropout_param=0.2, compare_batch_norm=False):
         super().__init__()
         self.residual = residual
         self.gelu = nn.GELU()
@@ -448,7 +448,7 @@ class DoubleConv(nn.Module):
 
 class DownSample(nn.Module):
     def __init__(self, num_input_channels, num_output_channels, embedding_dim=256, compare_dropout=False,
-                 dropout_param=0.5, compare_batch_norm=False):
+                 dropout_param=0.2, compare_batch_norm=False):
         super().__init__()
         self.maxpool_conv = nn.Sequential(
             nn.MaxPool2d(2),
@@ -471,7 +471,7 @@ class DownSample(nn.Module):
 
 class UpSample(nn.Module):
     def __init__(self, num_input_channels, num_output_channels, embedding_dim=256, compare_dropout=False,
-                 dropout_param=0.5, compare_batch_norm=False):
+                 dropout_param=0.2, compare_batch_norm=False):
         super().__init__()
 
         self.up = nn.Upsample(scale_factor=2, mode="bilinear", align_corners=True)
@@ -500,7 +500,7 @@ class UpSample(nn.Module):
 
 class UNet(nn.Module):
     def __init__(self, input_dim, device, num_input_channels=3, num_output_channels=3, time_dim=256,
-                 compare_dropout=False, dropout_param=0.5, compare_batch_norm=False):
+                 compare_dropout=False, dropout_param=0.2, compare_batch_norm=False):
         super().__init__()
         self.input_dim = input_dim
         self.device = device
