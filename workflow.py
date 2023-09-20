@@ -177,7 +177,8 @@ class Workflow:
                         targets = targets.unsqueeze(1).to(dtype=torch.float64)
                         prediction_ = torch.clamp(prediction_, min=0.0, max=1.0)  # For numerical issues
                     loss, obj = self.calculate_loss_and_objective(model, prediction_, examples,
-                                                                  targets if not self.diffusion else noise_, loss_fn)
+                                                                  targets if not self.diffusion else noise_, loss_fn,
+                                                                  t=None if not self.diffusion else t)
                     if not self.reconstruction and not self.least_sq and not self.diffusion:
                         pred = prediction_.argmax(1) if not self.binary_log_reg else prediction_.round()
                         num_closure += 1
@@ -201,7 +202,8 @@ class Workflow:
                     targets = targets.unsqueeze(1).to(dtype=torch.float64)
                     prediction = torch.clamp(prediction, min=0.0, max=1.0)  # For numerical issues
                 loss, objective = self.calculate_loss_and_objective(model, prediction, examples,
-                                                                    targets if not self.diffusion else noise, loss_fn)
+                                                                    targets if not self.diffusion else noise, loss_fn,
+                                                                    t=None if not self.diffusion else t)
                 if not self.reconstruction and not self.least_sq and not self.diffusion:
                     predicted = prediction.argmax(1) if not self.binary_log_reg else prediction.round()
                     correct += (predicted == targets).type(torch.float).sum().item()
@@ -283,7 +285,8 @@ class Workflow:
                     targets = targets.unsqueeze(1).to(dtype=torch.float64)
                     prediction = torch.clamp(prediction, min=0.0, max=1.0)  # For numerical issues
                 loss, _ = self.calculate_loss_and_objective(model, prediction, examples,
-                                                            targets if not self.diffusion else noise, loss_fn)
+                                                            targets if not self.diffusion else noise, loss_fn,
+                                                            t=None if not self.diffusion else t)
                 test_loss += loss.item()
                 if not self.reconstruction and not self.least_sq and not self.diffusion:
                     predicted = prediction.argmax(1) if not self.binary_log_reg else prediction.round()
@@ -301,14 +304,15 @@ class Workflow:
         if not self.reconstruction and not self.diffusion:
             print(f"Test Accuracy: {(100 * correct):>0.1f}%\n")
 
-    def calculate_loss_and_objective(self, model, prediction, examples, targets, loss_fn):
+    def calculate_loss_and_objective(self, model, prediction, examples, targets, loss_fn, t=None):
         # TODO generalise for other regularisation methods and write docstring
         invex_objective = self.calculate_loss(prediction, examples, targets, loss_fn)
 
         # minor code optimisation: if no invex regularisation, invex loss == invex objective. Also, exclude p
         # variables when performing L2 regularisation
-        loss = invex_objective if not self.compare_invex else self.calculate_loss(model.module(examples), examples,
-                                                                                  targets, loss_fn)
+        loss = invex_objective if not self.compare_invex else \
+            self.calculate_loss(model.module(examples) if not self.diffusion else model.module(examples, t), examples,
+                                targets, loss_fn)
         parameters_to_consider = list(model.parameters())[:-self.num_train_batches] if self.compare_invex else \
             model.parameters()
         objective = invex_objective + (0 if not self.compare_l2
