@@ -365,7 +365,8 @@ class DiffusionSetup:
     def sample(self, model, n):
         model.eval()
         with torch.no_grad():
-            x = torch.randn((n, 3, self.input_dim, self.input_dim)).to(self.device)
+            x = torch.randn((n, 3, self.input_dim, self.input_dim)).to(dtype=torch.float64)
+            x = x.to(self.device)
             for i in reversed(range(1, self.num_steps)):
                 t = (torch.ones(n) * i).long().to(self.device)
                 pred_noise = model(x, t)

@@ -385,10 +385,11 @@ class Workflow:
                    f"{LOSS_METRICS_FOLDER}{model_name}/Train/{self.model_config}_loss.pth")
         torch.save(self.avg_test_losses_to_plot,
                    f"{LOSS_METRICS_FOLDER}{model_name}/Test/{self.model_config}_loss.pth")
-        torch.save(self.avg_training_accuracies_to_plot,
-                   f"{LOSS_METRICS_FOLDER}{model_name}/Train/{self.model_config}_acc.pth")
-        torch.save(self.avg_test_accuracies_to_plot,
-                   f"{LOSS_METRICS_FOLDER}{model_name}/Test/{self.model_config}_acc.pth")
+        if not self.least_sq and not self.reconstruction and not self.diffusion:
+            torch.save(self.avg_training_accuracies_to_plot,
+                       f"{LOSS_METRICS_FOLDER}{model_name}/Train/{self.model_config}_acc.pth")
+            torch.save(self.avg_test_accuracies_to_plot,
+                       f"{LOSS_METRICS_FOLDER}{model_name}/Test/{self.model_config}_acc.pth")
 
         if self.save_parameters:
             # Get learned parameters (excluding p variables) and convert into single tensor - for comparison
