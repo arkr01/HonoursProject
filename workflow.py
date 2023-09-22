@@ -28,7 +28,7 @@ class Workflow:
                  invex_val=1e-1, invex_p_ones=False, compare_l2=False, l2_val=1e-2, compare_dropout=False,
                  dropout_val=0.2, compare_batch_norm=False, compare_data_aug=False, subset=False, reconstruction=False,
                  diffusion=False, least_sq=False, binary_log_reg=False, synthetic=False, sgd=True, batch_size=64,
-                 lbfgs=False, zero_init=False, early_converge=False, save_parameters=False):
+                 lbfgs=False, zero_init=False, one_init=False, early_converge=False, save_parameters=False):
         """
         Set up necessary constants and variables for all experiments.
 
@@ -56,6 +56,7 @@ class Workflow:
         :param batch_size: Batch size (length of training dataset if sgd == False)
         :param lbfgs: True if using LBFGS, False otherwise.
         :param zero_init: True for zero initialisation of parameters, False otherwise.
+        :param one_init: True for one initialisation of parameters, False otherwise.
         :param early_converge: True if gradient norm meeting grad_norm_tol should stop training, False otherwise.
         :param save_parameters: True if one wishes to save model parameters, False otherwise.
         """
@@ -99,8 +100,13 @@ class Workflow:
         self.sgd = sgd
         self.lbfgs = lbfgs
         if self.sgd and self.lbfgs:
-            raise Exception("Incorrect Optimiser Selected")
+            raise Exception("Invalid Optimiser Selected")
+
         self.zero_init = zero_init
+        self.one_init = one_init
+        if self.zero_init and self.one_init:
+            raise Exception("Invalid Initialisation Selected")
+
         self.early_converge = early_converge
         self.save_parameters = save_parameters
 
