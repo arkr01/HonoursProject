@@ -10,7 +10,8 @@ from PIL import Image
 
 from numpy import log10
 from torch.utils.data import DataLoader
-from torchvision.transforms import RandomHorizontalFlip, RandomVerticalFlip, RandomEqualize, RandomInvert
+from torchvision.transforms import RandomHorizontalFlip, RandomRotation, ColorJitter, RandomAdjustSharpness, \
+                                   RandomErasing
 from torchvision.utils import make_grid
 
 from datasets import *
@@ -26,9 +27,10 @@ class Workflow:
 
     def __init__(self, training_set, test_set, num_epochs=int(1e6), grad_norm_tol=1e-16, lr=None, compare_invex=False,
                  invex_val=1e-1, invex_p_ones=False, compare_l2=False, l2_val=1e-2, compare_dropout=False,
-                 dropout_val=0.2, compare_batch_norm=False, compare_data_aug=False, subset=False, reconstruction=False,
-                 diffusion=False, least_sq=False, binary_log_reg=False, synthetic=False, sgd=True, batch_size=64,
-                 lbfgs=False, zero_init=False, one_init=False, early_converge=False, save_parameters=False):
+                 dropout_val=0.2, compare_batch_norm=False, compare_data_aug=False, subset=False,
+                 train_mean=None, train_std=None, reconstruction=False, diffusion=False, least_sq=False,
+                 binary_log_reg=False, synthetic=False, sgd=True, batch_size=128, lbfgs=False, zero_init=False,
+                 one_init=False, early_converge=False, save_parameters=False):
         """
         Set up necessary constants and variables for all experiments.
 
@@ -47,6 +49,8 @@ class Workflow:
         :param compare_batch_norm: True if comparing batch normalisation, False otherwise
         :param compare_data_aug: True if comparing data augmentation, False otherwise
         :param subset: True if using Subset class for dataset, False otherwise (for data augmentation)
+        :param train_mean: Mean of training dataset (for data augmentation)
+        :param train_std: Standard deviation of training dataset (for data augmentation)
         :param reconstruction: True if performing reconstruction, False otherwise
         :param diffusion: True if performing diffusion, False otherwise
         :param least_sq: True if performing linear least squares regression, False otherwise
@@ -112,6 +116,12 @@ class Workflow:
 
         self.batch_size = batch_size if self.sgd else len(self.training_set)
 
+        self.train_mean = train_mean
+        self.train_std = train_std
+        if self.train_mean is None or self.train_std is None:
+            self.train_mean = cifar_train_mean
+            self.train_std = cifar_train_std
+
         model_invex = "_invex" if self.compare_invex else ""
         model_invex_ones = "_ones" if self.invex_p_ones else ""
         model_l2 = "_l2" if self.compare_l2 else ""
@@ -134,14 +144,22 @@ class Workflow:
         self.avg_test_losses_to_plot = torch.zeros_like(self.epochs_to_plot, dtype=torch.float64).to(device)
         self.avg_training_accuracies_to_plot = torch.zeros_like(self.epochs_to_plot, dtype=torch.float64).to(device)
         self.avg_test_accuracies_to_plot = torch.zeros_like(self.epochs_to_plot, dtype=torch.float64).to(device)
-        self.grad_l_inf_norm_to_plot = torch.zeros_like(self.epochs_to_plot, dtype=torch.float64).to(device)
+        self.grad_l_inf_norm_to_plot_total = torch.zeros_like(self.epochs_to_plot, dtype=torch.float64).to(device)
+
+        # theta refers to the original problem's parameters, prior to invex regularisation
+        self.grad_l_inf_norm_to_plot_theta = torch.zeros_like(self.epochs_to_plot, dtype=torch.float64).to(device)
+        self.grad_l_inf_norm_to_plot_p = torch.zeros_like(self.epochs_to_plot, dtype=torch.float64).to(device)
         self.plot_idx = 0
         self.num_converged = 0
         self.converged_epoch = -1
 
         if self.compare_data_aug:
-            augmentations = Compose([RandomHorizontalFlip(p=0.2), RandomVerticalFlip(p=0.1), RandomEqualize(p=0.1),
-                                     RandomInvert(p=0.2), ToTensor(), ConvertImageDtype(torch.float64)])
+            augmentations = Compose([RandomRotation(20), RandomHorizontalFlip(p=0.1),
+                                     ColorJitter(brightness=0.1, saturation=0.1, contrast=0.1),
+                                     RandomAdjustSharpness(sharpness_factor=2, p=0.1), ToTensor(),
+                                     Normalize(self.train_mean, self.train_std),
+                                     RandomErasing(p=0.75, scale=(0.02, 0.1), value=0.1, inplace=False),
+                                     ConvertImageDtype(torch.float64)])
             if subset:
                 training_set.dataset.transform = augmentations
             else:
@@ -252,20 +270,33 @@ class Workflow:
 
     def check_grad_convergence(self, model, epoch):
         """
-        Check training convergence via L_infinity gradient norm.
+        Check training convergence via L_infinity gradient norm for both the original parameters,
+        and the p variables separately.
 
         :param model: model being trained
         :param epoch: current epoch (check if grad norm should be plotted)
         :return: True if converged, False otherwise.
         """
-        grad_norm = 0
-        for p in model.parameters():
-            if p.grad is not None and p.requires_grad:
-                param_norm = p.grad.detach().norm(inf).item()
-                grad_norm = max(grad_norm, param_norm)
-        print(f"Current grad (L_infinity) norm: {grad_norm:>8f}")
+        parameter_grad_norms = [parameter.grad.detach().norm(inf).item() for parameter in model.parameters() if
+                                parameter.grad is not None and parameter.requires_grad]
+        grad_norm = max(parameter_grad_norms)
+        print(f"Current total grad (L_infinity) norm: {grad_norm:>8f}")
+
+        grad_norm_theta = grad_norm_p = 0
+        if self.compare_invex:
+            parameters_grad_norms_theta = parameter_grad_norms[:-self.num_train_batches]
+            parameter_grad_norms_p = list(set(parameter_grad_norms) - set(parameters_grad_norms_theta))
+
+            grad_norm_theta = max(parameters_grad_norms_theta)
+            grad_norm_p = max(parameter_grad_norms_p)
+
+            print(f"Current theta grad (L_infinity) norm: {grad_norm_theta:>8f}")
+            print(f"Current p grad (L_infinity) norm: {grad_norm_p:>8f}")
+
         if epoch in self.epochs_to_plot:
-            self.grad_l_inf_norm_to_plot[self.plot_idx] = grad_norm
+            self.grad_l_inf_norm_to_plot_total[self.plot_idx] = grad_norm
+            self.grad_l_inf_norm_to_plot_theta[self.plot_idx] = grad_norm_theta
+            self.grad_l_inf_norm_to_plot_p[self.plot_idx] = grad_norm_p
             if self.synthetic:
                 self.plot_idx += 1
         return grad_norm <= self.grad_norm_tol
@@ -350,7 +381,9 @@ class Workflow:
         self.epochs_to_plot = torch.narrow(self.epochs_to_plot, 0, 0, self.plot_idx)
         self.avg_training_losses_to_plot = torch.narrow(self.avg_training_losses_to_plot, 0, 0, self.plot_idx)
         self.avg_test_losses_to_plot = torch.narrow(self.avg_test_losses_to_plot, 0, 0, self.plot_idx)
-        self.grad_l_inf_norm_to_plot = torch.narrow(self.grad_l_inf_norm_to_plot, 0, 0, self.plot_idx)
+        self.grad_l_inf_norm_to_plot_total = torch.narrow(self.grad_l_inf_norm_to_plot_total, 0, 0, self.plot_idx)
+        self.grad_l_inf_norm_to_plot_theta = torch.narrow(self.grad_l_inf_norm_to_plot_theta, 0, 0, self.plot_idx)
+        self.grad_l_inf_norm_to_plot_p = torch.narrow(self.grad_l_inf_norm_to_plot_p, 0, 0, self.plot_idx)
 
     def save(self, model, model_name):
         """
@@ -389,7 +422,13 @@ class Workflow:
         model_type_filename = f"{model_name}/{self.model_config}"
 
         torch.save(self.epochs_to_plot, f"{LOSS_METRICS_FOLDER}{model_name}/epochs_to_plot.pth")
-        torch.save(self.grad_l_inf_norm_to_plot, f"{LOSS_METRICS_FOLDER}{model_type_filename}_grad_norm.pth")
+        torch.save(self.grad_l_inf_norm_to_plot_total,
+                   f"{LOSS_METRICS_FOLDER}{model_type_filename}_grad_norm_total.pth")
+        if self.compare_invex:
+            torch.save(self.grad_l_inf_norm_to_plot_theta,
+                       f"{LOSS_METRICS_FOLDER}{model_type_filename}_grad_norm_theta.pth")
+            torch.save(self.grad_l_inf_norm_to_plot_p,
+                       f"{LOSS_METRICS_FOLDER}{model_type_filename}_grad_norm_p.pth")
 
         torch.save(self.avg_training_losses_to_plot,
                    f"{LOSS_METRICS_FOLDER}{model_name}/Train/{self.model_config}_loss.pth")

@@ -9,7 +9,7 @@ from os.path import abspath, dirname
 import torch
 from torch.utils.data import Subset, TensorDataset
 from torchvision import datasets
-from torchvision.transforms import Compose, ToTensor, ConvertImageDtype
+from torchvision.transforms import Compose, ToTensor, ConvertImageDtype, Normalize
 
 # Set reproducibility configurations as per below:
 # https://pytorch.org/docs/stable/notes/randomness.html#reproducibility
@@ -30,6 +30,7 @@ cifar10_test_data = datasets.CIFAR10(root=data_dir, train=False, download=True, 
 cifar100_training_data = datasets.CIFAR100(root=data_dir, train=True, download=True, transform=img_to_float64)
 cifar100_test_data = datasets.CIFAR100(root=data_dir, train=False, download=True, transform=img_to_float64)
 
+
 # Synthetic data
 synthetic_true_x = torch.randn(100, dtype=torch.float64)
 synthetic_data_A = torch.randn(20, 100, dtype=torch.float64)
@@ -47,6 +48,16 @@ num_fashion_classes = len(fashion_classes)
 cifar_img_shape = cifar10_training_data[0][0].shape  # same for cifar10 and cifar100
 cifar10_classes = cifar10_training_data.classes
 cifar100_classes = cifar100_training_data.classes
+
+# Normalise CIFAR-10 dataset
+cifar_train_std, cifar_train_mean = torch.std_mean(torch.tensor(cifar10_training_data.data / 255), dim=(0, 1, 2))
+cifar_test_std, cifar_test_mean = torch.std_mean(torch.tensor(cifar10_test_data.data / 255), dim=(0, 1, 2))
+
+normalise_train = Compose([ToTensor(), Normalize(cifar_train_mean, cifar_train_std), ConvertImageDtype(torch.float64)])
+normalise_test = Compose([ToTensor(), Normalize(cifar_test_mean, cifar_test_std), ConvertImageDtype(torch.float64)])
+
+cifar10_training_data.transform = normalise_train
+cifar100_test_data.transform = normalise_test
 
 # Create subsets of train/test datasets
 NUM_PER_CLASS_TRAIN = 10  # Specify how many training examples per class to include in subset
