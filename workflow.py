@@ -277,18 +277,24 @@ class Workflow:
         :param epoch: current epoch (check if grad norm should be plotted)
         :return: True if converged, False otherwise.
         """
-        parameter_grad_norms = [parameter.grad.detach().norm(inf).item() for parameter in model.parameters() if
-                                parameter.grad is not None and parameter.requires_grad]
-        grad_norm = max(parameter_grad_norms)
+        all_params = [param for param in model.parameters()]
+        all_grads = [param.grad.detach().norm(inf).item() for param in all_params if
+                     param.grad is not None and param.requires_grad]
+        grad_norm = max(all_grads)
         print(f"Current total grad (L_infinity) norm: {grad_norm:>8f}")
 
         grad_norm_theta = grad_norm_p = 0
         if self.compare_invex:
-            parameters_grad_norms_theta = parameter_grad_norms[:-self.num_train_batches]
-            parameter_grad_norms_p = list(set(parameter_grad_norms) - set(parameters_grad_norms_theta))
+            theta_params = all_params[:-self.num_train_batches]
+            p_params = list(set(all_params) - set(theta_params))
 
-            grad_norm_theta = max(parameters_grad_norms_theta)
-            grad_norm_p = max(parameter_grad_norms_p)
+            theta_grads = [param.grad.detach().norm(inf).item() for param in theta_params if
+                           param.grad is not None and param.requires_grad]
+            p_grads = [param.grad.detach().norm(inf).item() for param in p_params if
+                       param.grad is not None and param.requires_grad]
+
+            grad_norm_theta = max(theta_grads)
+            grad_norm_p = max(p_grads)
 
             print(f"Current theta grad (L_infinity) norm: {grad_norm_theta:>8f}")
             print(f"Current p grad (L_infinity) norm: {grad_norm_p:>8f}")
