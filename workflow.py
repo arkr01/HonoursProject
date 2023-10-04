@@ -29,7 +29,7 @@ class Workflow:
                  invex_val=1e-1, invex_p_ones=False, compare_l2=False, l2_val=1e-2, compare_dropout=False,
                  dropout_val=0.2, compare_batch_norm=False, compare_data_aug=False, subset=False,
                  train_mean=None, train_std=None, reconstruction=False, diffusion=False, least_sq=False,
-                 binary_log_reg=False, synthetic=False, sgd=True, batch_size=128, lbfgs=False, zero_init=False,
+                 binary_log_reg=False, synthetic=False, sgd=True, batch_size=64, lbfgs=False, zero_init=False,
                  one_init=False, early_converge=False, save_parameters=False):
         """
         Set up necessary constants and variables for all experiments.
@@ -170,7 +170,7 @@ class Workflow:
         self.num_train_batches = len(self.training_loader)
 
     def train(self, model, loss_fn, optimiser, epoch):
-        diffusion_setup = None
+        diffusion_setup = t = None
         if self.diffusion:
             model, diffusion_setup = model
         num_examples = len(self.training_loader.dataset)
