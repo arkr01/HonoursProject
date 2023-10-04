@@ -23,7 +23,7 @@ if __name__ == '__main__':
     # Initialise parameters to 0 or 1 if needed
     if experiment.zero_init or experiment.one_init:
         init_val = int(experiment.one_init)
-        for _, param in unet_model.named_parameters():
+        for _, param in resnet18_model.named_parameters():
             param.detach().fill_(init_val)
 
     resnet18_model = ModuleWrapper(resnet18_model, lamda=experiment.invex_param, p_ones=experiment.invex_p_ones)
