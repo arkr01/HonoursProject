@@ -15,10 +15,11 @@ rcParams["text.usetex"] = True  # Allows LaTeX in titles/labels/legends
 
 # What experiment we're plotting
 model = "resnet18_model"
-plot_title = "ResNet18 Classification (Zero Initialisation)"
 lr = 1000.0
 lambda_1 = 0.1
 lambda_2 = 0.01
+plot_title = \
+    rf"ResNet18 Classification (Zero Initialisation) (lr$\approx{lr}$, $\lambda_1={lambda_1}$, $\lambda_2={lambda_2}$)"
 
 experiment_name = f"sgd_zero_lr{lr}_lambda{lambda_1}_l2lambda{lambda_2}_all_individual"
 standard_lr = experiment_name.__contains__("lrst")
@@ -129,7 +130,7 @@ with torch.no_grad():
                 'Batch Normalisation'])
     plt.xlabel('Epochs')
     plt.ylabel('Avg Train Loss')
-    plt.title(rf'{plot_title} (lr$\approx{lr}$, $\lambda_1={lambda_1}$, $\lambda_2={lambda_2}$)')
+    plt.title(plot_title)
     plt.savefig(PLOTS_RESULTS_FOLDER + f'{model}/Train/Loss/{experiment_name}.jpg')
     # plt.savefig(PLOTS_RESULTS_FOLDER + f'{model}/Train/Loss/{experiment_name}.pdf')
 
@@ -145,7 +146,7 @@ with torch.no_grad():
                 'Batch Normalisation'])
     plt.xlabel('Epochs')
     plt.ylabel('Avg Test Loss')
-    plt.title(rf'{plot_title} (lr$\approx{lr}$, $\lambda_1={lambda_1}$, $\lambda_2={lambda_2}$)')
+    plt.title(plot_title)
     plt.savefig(PLOTS_RESULTS_FOLDER + f'{model}/Test/Loss/{experiment_name}.jpg')
     # # plt.savefig(PLOTS_RESULTS_FOLDER + f'{model}/Test/Loss/{experiment_name}.pdf')
 
@@ -162,7 +163,7 @@ with torch.no_grad():
                 'Batch Normalisation'])
     plt.xlabel('Epochs')
     plt.ylabel('Avg Train Accuracy')
-    plt.title(rf'{plot_title} (lr$\approx{lr}$, $\lambda_1={lambda_1}$, $\lambda_2={lambda_2}$)')
+    plt.title(plot_title)
     plt.savefig(PLOTS_RESULTS_FOLDER + f'{model}/Train/Accuracy/{experiment_name}.jpg')
     # plt.savefig(PLOTS_RESULTS_FOLDER + f'{model}/Train/Accuracy/{experiment_name}.pdf')
 
@@ -178,7 +179,7 @@ with torch.no_grad():
                 'Batch Normalisation'])
     plt.xlabel('Epochs')
     plt.ylabel('Avg Test Accuracy')
-    plt.title(rf'{plot_title} (lr$\approx{lr}$, $\lambda_1={lambda_1}$, $\lambda_2={lambda_2}$)')
+    plt.title(plot_title)
     plt.savefig(PLOTS_RESULTS_FOLDER + f'{model}/Test/Accuracy/{experiment_name}.jpg')
     # # plt.savefig(PLOTS_RESULTS_FOLDER + f'{model}/Test/Accuracy/{experiment_name}.pdf')
 
@@ -195,7 +196,7 @@ with torch.no_grad():
                 'Batch Normalisation'])
     plt.xlabel('Epochs')
     plt.ylabel(r'$\ell_\infty$ Gradient Norm')
-    plt.title(rf'{plot_title} (lr$\approx{lr}$, $\lambda_1={lambda_1}$, $\lambda_2={lambda_2}$)')
+    plt.title(plot_title)
     plt.savefig(PLOTS_RESULTS_FOLDER + f'{model}/Gradient Norm/{experiment_name}_total.jpg')
     # plt.savefig(PLOTS_RESULTS_FOLDER + f'{model}/Gradient Norm/{experiment_name}_total.pdf')
 
@@ -206,7 +207,7 @@ with torch.no_grad():
     plt.legend([r'Invex ($\theta$)', r'Invex Scalar ($\theta$)'])
     plt.xlabel('Epochs')
     plt.ylabel(r'$\ell_\infty$ Gradient Norm')
-    plt.title(rf'{plot_title} (lr$\approx{lr}$, $\lambda_1={lambda_1}$, $\lambda_2={lambda_2}$)')
+    plt.title(plot_title)
     plt.savefig(PLOTS_RESULTS_FOLDER + f'{model}/Gradient Norm/{experiment_name}_theta.jpg')
     # plt.savefig(PLOTS_RESULTS_FOLDER + f'{model}/Gradient Norm/{experiment_name}_theta.pdf')
 
@@ -217,7 +218,7 @@ with torch.no_grad():
     plt.legend([r'Invex ($p$)', r'Invex Scalar ($p$)'])
     plt.xlabel('Epochs')
     plt.ylabel(r'$\ell_\infty$ Gradient Norm')
-    plt.title(rf'{plot_title} (lr$\approx{lr}$, $\lambda_1={lambda_1}$, $\lambda_2={lambda_2}$)')
+    plt.title(plot_title)
     plt.savefig(PLOTS_RESULTS_FOLDER + f'{model}/Gradient Norm/{experiment_name}_p.jpg')
     # plt.savefig(PLOTS_RESULTS_FOLDER + f'{model}/Gradient Norm/{experiment_name}_p.pdf')
 
