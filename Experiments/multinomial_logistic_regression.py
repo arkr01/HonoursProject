@@ -20,7 +20,7 @@ if __name__ == '__main__':
     logistic_model_old_name = f"{logistic_model_old=}".split('=')[0]  # Gives name of model variable!
     print(logistic_model_old)
 
-    logistic_model_old = ModuleWrapper(logistic_model_old, lamda=experiment.invex_param, log_out=True)
+    logistic_model_old = InvexRegulariser(logistic_model_old, lamda=experiment.invex_param, log_out=True)
     logistic_model_old.init_ps(train_dataloader=experiment.training_loader)
     logistic_model_old = logistic_model_old.to(device)
 

@@ -19,7 +19,7 @@ if __name__ == '__main__':
     binary_classification_model_name = f"{binary_classification_model=}".split('=')[0]  # Gives name of model variable!
     print(binary_classification_model)
 
-    binary_classification_model = ModuleWrapper(binary_classification_model, lamda=experiment.invex_param)
+    binary_classification_model = InvexRegulariser(binary_classification_model, lamda=experiment.invex_param)
     binary_classification_model.init_ps(train_dataloader=experiment.training_loader)
     binary_classification_model = binary_classification_model.to(device)
 

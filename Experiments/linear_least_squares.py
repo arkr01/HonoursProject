@@ -19,7 +19,7 @@ if __name__ == '__main__':
     least_squares_model_name = f"{least_squares_model=}".split('=')[0]  # Gives name of model variable!
     print(least_squares_model)
 
-    least_squares_model = ModuleWrapper(least_squares_model, lamda=experiment.invex_param)
+    least_squares_model = InvexRegulariser(least_squares_model, lamda=experiment.invex_param)
     least_squares_model.init_ps(train_dataloader=experiment.training_loader)
     least_squares_model = least_squares_model.to(device)
 

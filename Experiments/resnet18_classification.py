@@ -26,7 +26,7 @@ if __name__ == '__main__':
         for _, param in resnet18_model.named_parameters():
             param.detach().fill_(init_val)
 
-    resnet18_model = ModuleWrapper(resnet18_model, lamda=experiment.invex_param, p_ones=experiment.invex_p_ones)
+    resnet18_model = InvexRegulariser(resnet18_model, lamda=experiment.invex_param, p_ones=experiment.invex_p_ones)
     resnet18_model.init_ps(train_dataloader=experiment.training_loader)
     resnet18_model = resnet18_model.to(device)
 

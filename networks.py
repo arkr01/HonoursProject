@@ -7,14 +7,14 @@ import torch
 from torch import nn
 
 
-class ModuleWrapper(nn.Module):
+class InvexRegulariser(nn.Module):
     """
     This class has been sourced from
     https://github.com/RixonC/invexifying-regularization
-    It appears primarily in its original form, barring a small modification in the constructor to initialise self.ps to
-    None, as well as generalisations to handle NN architectures with multiple outputs, and those requiring
-    logarithmic output. Generalisations have also been made to consider a scalar variable p multiplied by a vector of
-    ones.
+    It appears primarily in its original form, barring a new name, a small modification in the constructor to
+    initialise self.ps to None, as well as generalisations to handle NN architectures with multiple outputs,
+    and those requiring logarithmic output. Generalisations have also been made to consider a scalar variable p
+    multiplied by a vector of ones.
 
     This acts as a wrapper for any model to perform invex regularisation (https://arxiv.org/abs/2111.11027v1)
     """

@@ -56,8 +56,8 @@ if __name__ == '__main__':
 
     # Set up invex regularisation if necessary
     resnet50_last_layer_model = resnet50_last_layer_model.to(dtype=torch.float64)
-    resnet50_last_layer_model = ModuleWrapper(resnet50_last_layer_model, lamda=experiment.invex_param,
-                                              p_ones=experiment.invex_p_ones)
+    resnet50_last_layer_model = InvexRegulariser(resnet50_last_layer_model, lamda=experiment.invex_param,
+                                                 p_ones=experiment.invex_p_ones)
     resnet50_last_layer_model.init_ps(train_dataloader=experiment.training_loader)
     resnet50_last_layer_model = resnet50_last_layer_model.to(device)
 

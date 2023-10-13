@@ -18,7 +18,7 @@ if __name__ == '__main__':
     vae_model_name = f"{vae_model=}".split('=')[0]  # Gives name of model variable!
     print(vae_model)
 
-    vae_model = ModuleWrapper(vae_model, lamda=experiment.invex_param, multi_output=True)
+    vae_model = InvexRegulariser(vae_model, lamda=experiment.invex_param, multi_output=True)
     vae_model.init_ps(train_dataloader=experiment.training_loader)
     vae_model = vae_model.to(device)
 

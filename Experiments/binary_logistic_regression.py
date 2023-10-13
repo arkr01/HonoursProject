@@ -19,7 +19,7 @@ if __name__ == '__main__':
     binary_logistic_model_fashion_name = f"{binary_logistic_model_fashion=}".split('=')[0]  # Gives name of model variable!
     print(binary_logistic_model_fashion)
 
-    binary_logistic_model_fashion = ModuleWrapper(binary_logistic_model_fashion, lamda=experiment.invex_param)
+    binary_logistic_model_fashion = InvexRegulariser(binary_logistic_model_fashion, lamda=experiment.invex_param)
     binary_logistic_model_fashion.init_ps(train_dataloader=experiment.training_loader)
     binary_logistic_model_fashion = binary_logistic_model_fashion.to(device)
 
