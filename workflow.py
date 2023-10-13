@@ -170,13 +170,13 @@ class Workflow:
         self.num_train_batches = len(self.training_loader)
 
     def train(self, model, loss_fn, optimiser, epoch):
-        diffusion_setup = t = None
+        input_model = model
         if self.diffusion:
-            model, diffusion_setup = model
+            model, diffusion_setup = input_model
         num_examples = len(self.training_loader.dataset)
+        total_loss = correct = 0
         model.train()
 
-        total_loss = correct = noise = 0
         print(f"Epoch {epoch + 1}\n-------------------------------")
         for batch, (examples, targets) in enumerate(self.training_loader):
             examples, targets = examples.to(device), targets.to(device)
@@ -190,24 +190,12 @@ class Workflow:
 
                 def closure():
                     nonlocal targets, loss, correct, num_closure
-                    noise_ = 0
-                    if self.diffusion:
-                        t_ = diffusion_setup.sample_timestep(len(examples)).to(device)
-                        x_t_, noise_ = diffusion_setup.forward_process(examples, t_)
-                        prediction_ = model(x_t_, t_)
-                    else:
-                        prediction_ = model(examples)
-                    if self.binary_log_reg:
-                        targets = targets.unsqueeze(1).to(dtype=torch.float64)
-                        prediction_ = torch.clamp(prediction_, min=0.0, max=1.0)  # For numerical issues
-                    loss, obj = self.calculate_loss_and_objective(model, prediction_, examples,
-                                                                  targets if not self.diffusion else noise_, loss_fn,
-                                                                  t=None if not self.diffusion else t)
+                    loss, obj, correct_batch = self.calculate_loss_objective_accuracy(input_model, examples, targets,
+                                                                                      loss_fn)
                     if not self.reconstruction and not self.least_sq and not self.diffusion:
-                        pred = prediction_.argmax(1) if not self.binary_log_reg else prediction_.round()
                         num_closure += 1
                         if num_closure == 1:
-                            correct += (pred == targets).type(torch.float).sum().item()
+                            correct += correct_batch
 
                     # Backpropagation
                     optimiser.zero_grad()
@@ -216,21 +204,10 @@ class Workflow:
 
                 optimiser.step(closure)
             else:
-                if self.diffusion:
-                    t = diffusion_setup.sample_timestep(len(examples)).to(device)
-                    x_t, noise = diffusion_setup.forward_process(examples, t)
-                    prediction = model(x_t, t)
-                else:
-                    prediction = model(examples)
-                if self.binary_log_reg:
-                    targets = targets.unsqueeze(1).to(dtype=torch.float64)
-                    prediction = torch.clamp(prediction, min=0.0, max=1.0)  # For numerical issues
-                loss, objective = self.calculate_loss_and_objective(model, prediction, examples,
-                                                                    targets if not self.diffusion else noise, loss_fn,
-                                                                    t=None if not self.diffusion else t)
+                loss, objective, correct_b = self.calculate_loss_objective_accuracy(input_model, examples, targets,
+                                                                                    loss_fn)
                 if not self.reconstruction and not self.least_sq and not self.diffusion:
-                    predicted = prediction.argmax(1) if not self.binary_log_reg else prediction.round()
-                    correct += (predicted == targets).type(torch.float).sum().item()
+                    correct += correct_b
 
                 # Backpropagation
                 optimiser.zero_grad()
@@ -308,32 +285,21 @@ class Workflow:
         return grad_norm <= self.grad_norm_tol
 
     def test(self, model, loss_fn, epoch):
-        diffusion_setup = None
+        input_model = model
         if self.diffusion:
-            model, diffusion_setup = model
+            model, diffusion_setup = input_model
+
         test_batches = len(self.test_loader)
         num_examples = len(self.test_loader.dataset)
-        model.eval()
         test_loss = correct = 0
+        model.eval()
         with torch.no_grad():
             for examples, targets in self.test_loader:
                 examples, targets = examples.to(device), targets.to(device)
-                if self.diffusion:
-                    t = diffusion_setup.sample_timestep(len(examples)).to(device)
-                    x_t, noise = diffusion_setup.forward_process(examples, t)
-                    prediction = model(x_t, t)
-                else:
-                    prediction = model(examples)
-                if self.binary_log_reg:
-                    targets = targets.unsqueeze(1).to(dtype=torch.float64)
-                    prediction = torch.clamp(prediction, min=0.0, max=1.0)  # For numerical issues
-                loss, _ = self.calculate_loss_and_objective(model, prediction, examples,
-                                                            targets if not self.diffusion else noise, loss_fn,
-                                                            t=None if not self.diffusion else t)
+                loss, _, correct_batch = self.calculate_loss_objective_accuracy(input_model, examples, targets, loss_fn)
                 test_loss += loss.item()
                 if not self.reconstruction and not self.least_sq and not self.diffusion:
-                    predicted = prediction.argmax(1) if not self.binary_log_reg else prediction.round()
-                    correct += (predicted == targets).type(torch.float).sum().item()
+                    correct += correct_batch
         test_loss /= test_batches
         correct /= num_examples
 
@@ -347,20 +313,40 @@ class Workflow:
         if not self.reconstruction and not self.diffusion:
             print(f"Test Accuracy: {(100 * correct):>0.1f}%\n")
 
-    def calculate_loss_and_objective(self, model, prediction, examples, targets, loss_fn, t=None):
+    def calculate_loss_objective_accuracy(self, model, examples, targets, loss_fn):
         # TODO generalise for other regularisation methods and write docstring
+        t = None
+        if self.diffusion:
+            model, diffusion_setup = model
+            t = diffusion_setup.sample_timestep(len(examples)).to(device)
+            x_t, noise = diffusion_setup.forward_process(examples, t)
+            prediction = model(x_t, t)
+            targets = noise  # instead of comparing to supervised labels, we compute loss with respect to noise
+        else:
+            prediction = model(examples)
+        if self.binary_log_reg:
+            targets = targets.unsqueeze(1).to(dtype=torch.float64)
+            prediction = torch.clamp(prediction, min=0.0, max=1.0)  # For numerical issues
+
         invex_objective = self.calculate_loss(prediction, examples, targets, loss_fn)
 
-        # minor code optimisation: if no invex regularisation, invex loss == invex objective. Also, exclude p
+        # If no invex regularisation, invex loss == invex objective, and prediction same with/out p's. Also, exclude p
         # variables when performing L2 regularisation
-        loss = invex_objective if not self.compare_invex else \
-            self.calculate_loss(model.module(examples) if not self.diffusion else model.module(examples, t), examples,
-                                targets, loss_fn)
+        no_p_prediction, loss = prediction, invex_objective
+        if self.compare_invex:
+            no_p_prediction = model.module(examples) if not self.diffusion else model.module(examples, t)
+            loss = self.calculate_loss(no_p_prediction, examples, targets, loss_fn)
         parameters_to_consider = list(model.parameters())[:-self.num_train_batches] if self.compare_invex else \
             model.parameters()
         objective = invex_objective + (0 if not self.compare_l2
                                        else 0.5 * self.l2_param * sum(p.pow(2.0).sum() for p in parameters_to_consider))
-        return loss, objective
+
+        # Calculate number of correct predictions if performing classification
+        num_correct = 0
+        if not self.reconstruction and not self.least_sq and not self.diffusion:
+            predicted = no_p_prediction.argmax(1) if not self.binary_log_reg else no_p_prediction.round()
+            num_correct += (predicted == targets).type(torch.float).sum().item()
+        return loss, objective, num_correct
 
     def calculate_loss(self, model_output, examples, targets, loss_fn):
         # TODO change self.reconstruction parameter to enum once all models have been implemented, and then write

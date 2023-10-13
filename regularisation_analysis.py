@@ -15,13 +15,13 @@ rcParams["text.usetex"] = True  # Allows LaTeX in titles/labels/legends
 
 # What experiment we're plotting
 model = "resnet18_model"
-lr = 1000.0
+lr = 100.0
 lambda_1 = 0.1
 lambda_2 = 0.01
 plot_title = \
-    rf"ResNet18 Classification (Zero Initialisation) (lr$\approx{lr}$, $\lambda_1={lambda_1}$, $\lambda_2={lambda_2}$)"
+    rf"ResNet18 Classification (Zero Initialisation) (GD) (lr$\approx{lr}$, $\lambda_1={lambda_1}$, $\lambda_2={lambda_2}$)"
 
-experiment_name = f"sgd_zero_lr{lr}_lambda{lambda_1}_l2lambda{lambda_2}_all_individual"
+experiment_name = f"gd_zero_lr{lr}_lambda{lambda_1}_l2lambda{lambda_2}_all_individual"
 standard_lr = experiment_name.__contains__("lrst")
 
 unreg_or_gd = "unregularised_" if experiment_name[0] == 's' and standard_lr else "with_"
@@ -36,8 +36,8 @@ unreg_config = unreg_or_gd + config
 if "wie" in LOSS_METRICS_FOLDER or "rgp" in LOSS_METRICS_FOLDER:
     experiment_name = "full_" + experiment_name
 
-epochs_to_plot = torch.load(LOSS_METRICS_FOLDER + f'{model}/epochs_to_plot.pth').to('cpu')
-# epochs_to_plot = torch.logspace(0, log10(int(2e4)), 100).long().unique() - 1
+# epochs_to_plot = torch.load(LOSS_METRICS_FOLDER + f'{model}/epochs_to_plot.pth').to('cpu')
+epochs_to_plot = torch.logspace(0, log10(int(5e4)), 100).long().unique() - 1
 
 # Train/Test Losses
 unreg_train_loss = torch.load(LOSS_METRICS_FOLDER + f'{model}/Train/{unreg_config}loss.pth').to('cpu')
