@@ -315,7 +315,7 @@ class Workflow:
 
     def calculate_loss_objective_accuracy(self, model, examples, targets, loss_fn):
         # TODO generalise for other regularisation methods and write docstring
-        t = None
+        x_t = t = None
         if self.diffusion:
             model, diffusion_setup = model
             t = diffusion_setup.sample_timestep(len(examples)).to(device)
@@ -334,7 +334,7 @@ class Workflow:
         # variables when performing L2 regularisation
         no_p_prediction, loss = prediction, invex_objective
         if self.compare_invex:
-            no_p_prediction = model.module(examples) if not self.diffusion else model.module(examples, t)
+            no_p_prediction = model.module(examples) if not self.diffusion else model.module(x_t, t)
             loss = self.calculate_loss(no_p_prediction, examples, targets, loss_fn)
         parameters_to_consider = list(model.parameters())[:-self.num_train_batches] if self.compare_invex else \
             model.parameters()

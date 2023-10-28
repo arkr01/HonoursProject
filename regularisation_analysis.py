@@ -216,7 +216,7 @@ with torch.no_grad():
     # Theta and p separately for invex methods
     plt.figure()
     plt.plot(epochs_to_plot, invex_grad_norm_theta, 'r', ls=(0, (5, 1)))  # densely dashed
-    plt.plot(epochs_to_plot, invex_ones_grad_norm_theta, 'rx')  # x
+    plt.plot(epochs_to_plot, invex_ones_grad_norm_theta, 'rx-')  # x
     plt.legend([r'Invex ($\theta$)', r'Invex Scalar ($\theta$)'])
     plt.xlabel('Epochs')
     plt.ylabel(r'$\ell_\infty$ Gradient Norm')
