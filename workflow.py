@@ -396,8 +396,11 @@ class Workflow:
             mkdir(PLOTS_RESULTS_FOLDER)
         if not exists(PLOTS_RESULTS_FOLDER + model_name):
             mkdir(PLOTS_RESULTS_FOLDER + model_name)
-            mkdir(PLOTS_RESULTS_FOLDER + model_name + '/InfNormDiffs')
             mkdir(PLOTS_RESULTS_FOLDER + model_name + '/Gradient Norm')
+
+            mkdir(PLOTS_RESULTS_FOLDER + model_name + '/Train_Test')
+            mkdir(PLOTS_RESULTS_FOLDER + model_name + '/Train_Test/Loss')
+            mkdir(PLOTS_RESULTS_FOLDER + model_name + '/Train_Test/Tuning')
 
             mkdir(PLOTS_RESULTS_FOLDER + model_name + '/Train')
             mkdir(PLOTS_RESULTS_FOLDER + model_name + '/Train/Loss')
@@ -405,6 +408,7 @@ class Workflow:
             mkdir(PLOTS_RESULTS_FOLDER + model_name + '/Test')
             mkdir(PLOTS_RESULTS_FOLDER + model_name + '/Test/Loss')
             if not self.least_sq and not self.reconstruction and not self.diffusion:
+                mkdir(PLOTS_RESULTS_FOLDER + model_name + '/Train_Test/Accuracy')
                 mkdir(PLOTS_RESULTS_FOLDER + model_name + '/Train/Accuracy')
                 mkdir(PLOTS_RESULTS_FOLDER + model_name + '/Test/Accuracy')
             if self.diffusion:
