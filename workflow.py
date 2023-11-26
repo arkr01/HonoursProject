@@ -28,7 +28,7 @@ class Workflow:
     def __init__(self, training_set, test_set, num_epochs=int(1e6), grad_norm_tol=1e-16, lr=None, compare_invex=False,
                  invex_val=1e-1, invex_p_ones=False, compare_l2=False, l2_val=1e-2, compare_dropout=False,
                  dropout_val=0.2, compare_batch_norm=False, compare_data_aug=False, subset=False,
-                 train_mean=None, train_std=None, reconstruction=False, diffusion=False, least_sq=False,
+                 train_mean=None, train_std=None, vae=False, diffusion=False, least_sq=False,
                  binary_log_reg=False, synthetic=False, sgd=True, batch_size=64, lbfgs=False, zero_init=False,
                  one_init=False, early_converge=False, save_parameters=False):
         """
@@ -51,7 +51,7 @@ class Workflow:
         :param subset: True if using Subset class for dataset, False otherwise (for data augmentation)
         :param train_mean: Mean of training dataset (for data augmentation)
         :param train_std: Standard deviation of training dataset (for data augmentation)
-        :param reconstruction: True if performing reconstruction, False otherwise
+        :param vae: True if using VAE, False otherwise
         :param diffusion: True if performing diffusion, False otherwise
         :param least_sq: True if performing linear least squares regression, False otherwise
         :param binary_log_reg: True if performing binary logistic regression, False otherwise
@@ -85,13 +85,14 @@ class Workflow:
         self.dropout_val = dropout_val
         self.dropout_param = self.dropout_val * self.compare_dropout
 
-        self.reconstruction = reconstruction
+        self.vae = vae
         self.diffusion = diffusion
         self.least_sq = least_sq
         self.binary_log_reg = binary_log_reg
         self.synthetic = synthetic
 
-        # If learning rate is left unspecified, set to optimal (upper bound) learning rate (from MATH3204)
+        # If learning rate is left unspecified, set to optimal (upper bound) learning rate for binary logistic
+        # regression or linear least squares, based on Lipschitz gradient constant
         if self.lr is None:
             training_set_transformed = torch.stack(list(zip(*self.training_set))[0]).squeeze()
             training_set_transformed_matrix = training_set_transformed.reshape(len(training_set_transformed), -1)
@@ -170,6 +171,16 @@ class Workflow:
         self.num_train_batches = len(self.training_loader)
 
     def train(self, model, loss_fn, optimiser, epoch):
+        """
+        Generic training function that performs single epoch for various models (see Experiments folder for list of
+        models, update as required for new experiments).
+
+        :param model: model to train
+        :param loss_fn: loss function
+        :param optimiser: optimiser
+        :param epoch: epoch number (zero-based indexing)
+        :return: If training should stop (i.e. gradient norm convergence), assuming self.early_converge is True
+        """
         input_model = model
         if self.diffusion:
             model, diffusion_setup = input_model
@@ -192,7 +203,7 @@ class Workflow:
                     nonlocal targets, loss, correct, num_closure
                     loss, obj, correct_batch = self.calculate_loss_objective_accuracy(input_model, examples, targets,
                                                                                       loss_fn)
-                    if not self.reconstruction and not self.least_sq and not self.diffusion:
+                    if not self.vae and not self.least_sq and not self.diffusion:
                         num_closure += 1
                         if num_closure == 1:
                             correct += correct_batch
@@ -206,7 +217,7 @@ class Workflow:
             else:
                 loss, objective, correct_b = self.calculate_loss_objective_accuracy(input_model, examples, targets,
                                                                                     loss_fn)
-                if not self.reconstruction and not self.least_sq and not self.diffusion:
+                if not self.vae and not self.least_sq and not self.diffusion:
                     correct += correct_b
 
                 # Backpropagation
@@ -225,7 +236,7 @@ class Workflow:
 
         # Print and save
         print(f"\nTrain loss (avg): {avg_loss:>8f}")
-        if not self.reconstruction and not self.least_sq and not self.diffusion:
+        if not self.vae and not self.least_sq and not self.diffusion:
             print(f"Train Accuracy: {(100 * correct):>0.1f}%")
 
         if epoch in self.epochs_to_plot:
@@ -285,6 +296,14 @@ class Workflow:
         return grad_norm <= self.grad_norm_tol
 
     def test(self, model, loss_fn, epoch):
+        """
+        Generic test function that performs single epoch for various models (see Experiments folder for list of
+        models, update as required for new experiments).
+
+        :param model: model to test
+        :param loss_fn: loss function
+        :param epoch: epoch number (zero-based indexing)
+        """
         input_model = model
         if self.diffusion:
             model, diffusion_setup = input_model
@@ -298,7 +317,7 @@ class Workflow:
                 examples, targets = examples.to(device), targets.to(device)
                 loss, _, correct_batch = self.calculate_loss_objective_accuracy(input_model, examples, targets, loss_fn)
                 test_loss += loss.item()
-                if not self.reconstruction and not self.least_sq and not self.diffusion:
+                if not self.vae and not self.least_sq and not self.diffusion:
                     correct += correct_batch
         test_loss /= test_batches
         correct /= num_examples
@@ -309,12 +328,22 @@ class Workflow:
             self.avg_test_accuracies_to_plot[self.plot_idx] = correct
             self.plot_idx += 1
 
-        print(f"Test loss (avg): {test_loss:>8f}" + ("\n" if self.reconstruction else ""))
-        if not self.reconstruction and not self.diffusion:
+        print(f"Test loss (avg): {test_loss:>8f}" + ("\n" if self.vae else ""))
+        if not self.vae and not self.diffusion:
             print(f"Test Accuracy: {(100 * correct):>0.1f}%\n")
 
     def calculate_loss_objective_accuracy(self, model, examples, targets, loss_fn):
-        # TODO generalise for other regularisation methods and write docstring
+        """
+        Generic function to calculate model loss & objective, as well as model accuracy (if appropriate). We refer to
+        the loss as the unregularised objective, where the objective is the function to optimise during training.
+
+        :param model: model to calculate metrics for
+        :param examples: input data
+        :param targets: input labels
+        :param loss_fn: loss function
+        :return: (loss, objective, accuracy)
+        """
+
         x_t = t = None
         if self.diffusion:
             model, diffusion_setup = model
@@ -343,21 +372,27 @@ class Workflow:
 
         # Calculate number of correct predictions if performing classification
         num_correct = 0
-        if not self.reconstruction and not self.least_sq and not self.diffusion:
+        if not self.vae and not self.least_sq and not self.diffusion:
             predicted = no_p_prediction.argmax(1) if not self.binary_log_reg else no_p_prediction.round()
             num_correct += (predicted == targets).type(torch.float).sum().item()
         return loss, objective, num_correct
 
     def calculate_loss(self, model_output, examples, targets, loss_fn):
-        # TODO change self.reconstruction parameter to enum once all models have been implemented, and then write
-        #  docstring
+        """
+        Apply loss function to model_output. Helper function for self.calculate_loss_objective_accuracy().
+        :param model_output: model output (typically a model prediction)
+        :param examples: input data
+        :param targets: input labels
+        :param loss_fn: loss function
+        :return: output of loss function (could be loss or objective, depending on context).
+        """
         kl_divergence = 0
-        if self.reconstruction:
+        if self.vae:
             prediction, mu, logvar = model_output
             kl_divergence = torch.mean(-0.5 * torch.sum(1 + logvar - mu ** 2 - torch.exp(logvar), dim=1), dim=0)
         else:
             prediction = model_output
-        main_loss = loss_fn(prediction, examples if self.reconstruction else targets)
+        main_loss = loss_fn(prediction, examples if self.vae else targets)
         if self.least_sq:
             main_loss *= 0.5
         return main_loss + kl_divergence
@@ -407,7 +442,7 @@ class Workflow:
 
             mkdir(PLOTS_RESULTS_FOLDER + model_name + '/Test')
             mkdir(PLOTS_RESULTS_FOLDER + model_name + '/Test/Loss')
-            if not self.least_sq and not self.reconstruction and not self.diffusion:
+            if not self.least_sq and not self.vae and not self.diffusion:
                 mkdir(PLOTS_RESULTS_FOLDER + model_name + '/Train_Test/Accuracy')
                 mkdir(PLOTS_RESULTS_FOLDER + model_name + '/Train/Accuracy')
                 mkdir(PLOTS_RESULTS_FOLDER + model_name + '/Test/Accuracy')
@@ -430,7 +465,7 @@ class Workflow:
                    f"{LOSS_METRICS_FOLDER}{model_name}/Train/{self.model_config}_loss.pth")
         torch.save(self.avg_test_losses_to_plot,
                    f"{LOSS_METRICS_FOLDER}{model_name}/Test/{self.model_config}_loss.pth")
-        if not self.least_sq and not self.reconstruction and not self.diffusion:
+        if not self.least_sq and not self.vae and not self.diffusion:
             torch.save(self.avg_training_accuracies_to_plot,
                        f"{LOSS_METRICS_FOLDER}{model_name}/Train/{self.model_config}_acc.pth")
             torch.save(self.avg_test_accuracies_to_plot,
